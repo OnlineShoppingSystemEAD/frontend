@@ -1,0 +1,130 @@
+/* orderlist.css */
+.order-list-container {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    font-family: 'Poppins', sans-serif;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    padding: 10px 0;
+    margin-left: 2vw;
+}
+
+.header-row > div {
+    flex: 1;
+    text-align: start;
+}
+
+.status-column {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sort-by {
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.order-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9f9f9;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.order-row:hover {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.new-badge {
+    position: absolute;
+    left: -50px;
+    top: 0;
+    background-color: #5B67B6 !important;
+    color: #fff;
+    padding: 5px;
+    writing-mode: vertical-rl;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+    font-size: 0.8rem;
+}
+
+.product-image {
+    flex: 0.5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.product-image img {
+    width: 40px;
+    height: 40px;
+}
+
+.product-info,
+.billing-info,
+.status-info {
+    flex: 1;
+    text-align: center;
+}
+.price-info{
+    flex: 1;
+    text-align: end;
+    margin-right: 10vw;
+}
+
+.status-info select {
+    padding: 5px;
+    border-radius: 5px;
+    width: 200px;
+    text-align: center;
+    display: inline-block;
+    position: relative;
+}
+
+/* orderlist.css */
+
+.custom-dropdown {
+    display: inline-block;
+    position: relative;
+    width: 120px; /* Adjust the width as needed */
+}
+
+.dropdown-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 30px 10px 15px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #000;
+    width: 100%; /* Set to 100% to match .custom-dropdown */
+}
+
+.dropdown-select:focus {
+    outline: none;
+}
+
+.custom-dropdown::after {
+    content: '▼'; /* Unicode character for the down arrow */
+    font-size: 0.8rem;
+    position: absolute;
+    right: 10px; /* Position the arrow */
+    top: 50%; /* Vertically center the arrow */
+    transform: translateY(-50%);
+    pointer-events: none; /* Prevent the arrow from blocking clicks */
+    color: #000; /* Set the arrow color */
+}

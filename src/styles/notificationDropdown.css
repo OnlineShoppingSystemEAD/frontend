@@ -1,0 +1,79 @@
+/* notificationDropdown.css */
+.notification-dropdown {
+    position: absolute;
+    top: 40px; /* Adjust based on the icon's position */
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 250px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 10px;
+}
+.notification-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -10px; /* Position it above the dropdown */
+    right: 20px; /* Align with dropdown content */
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #fff transparent;
+    z-index: 1001;
+}
+
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+    background-color: #e0e0e0;
+}
+
+.notification-date {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+.mark-as-read-button {
+    background-color: transparent;
+    border: none;
+    color: #5B67B6;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: right;
+    width: 100%;
+    padding: 5px 0;
+}
+
+.mark-as-read-button:hover {
+    color: #333;
+}
+.notification-dropdown {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

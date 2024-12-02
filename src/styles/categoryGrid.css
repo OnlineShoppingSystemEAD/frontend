@@ -1,0 +1,50 @@
+/* categoryGrid.css */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 20px;
+    padding: 20px;
+    margin: 0 auto;
+    max-width: 1000px; /* Adjust as needed */
+}
+
+.category-item {
+    background-color: #f9f9f9;
+    border-radius: 15px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.5s ease;
+    cursor: pointer;
+    padding: 10px;
+}
+
+
+.category-item:hover {
+    transform: translateY(-15px);
+    background-color: rgba(91, 103, 182, 0.5);
+}
+
+.category-image {
+    width: 100%;
+    height: auto;
+    padding: 20px;
+}
+
+.category-name {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 10px;
+}
+/* styles.css */
+.icon-trash {
+    font-size: 1.5rem; /* Adjust the size */
+    color: white; /* Set the color */
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.icon-trash:hover {
+    color: #7A7A7A; /* Change color on hover */
+}
