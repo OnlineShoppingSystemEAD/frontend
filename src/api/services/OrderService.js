@@ -24,9 +24,9 @@ const ShoppingCartService = {
     },
 
     // Add an item to the shopping cart
-    addItemToShoppingCart: async (itemData) => {
+    createShoppingCartItem: async (itemData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/shoppingCart`, itemData, {
+            const response = await axios.post(`${API_BASE_URL}/api/shoppingCart/addItem`, itemData, {
                 headers: getDefaultHeaders(),
             });
             return response.data;
@@ -36,8 +36,8 @@ const ShoppingCartService = {
         }
     },
 
-    // Update an item in the shopping cart (General update or quantity update)
-    updateShoppingCartItem: async (id, itemData) => {
+    // Update an item in the shopping cart
+    updateShoppingCart: async (id, itemData) => {
         try {
             const response = await axios.put(`${API_BASE_URL}/api/shoppingCart/${id}`, itemData, {
                 headers: getDefaultHeaders(),
@@ -50,26 +50,14 @@ const ShoppingCartService = {
     },
 
     // Delete an item from the shopping cart
-    deleteItemFromShoppingCart: async (id) => {
+    deleteItemFromShoppingCart: async (id, userId) => {
         try {
             await axios.delete(`${API_BASE_URL}/api/shoppingCart/${id}`, {
                 headers: getDefaultHeaders(),
+                params: { userId },
             });
         } catch (error) {
             console.error("Error deleting shopping cart item:", error.response?.data || error.message);
-            throw error;
-        }
-    },
-
-    // Fetch item details by item ID
-    fetchItemDetails: async (itemId) => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/api/items/${itemId}`, {
-                headers: getDefaultHeaders(),
-            });
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching item details:", error.response?.data || error.message);
             throw error;
         }
     },
@@ -77,15 +65,55 @@ const ShoppingCartService = {
 
 // Service for Order APIs
 const OrderService = {
-    // Create a new order
-    createOrder: async (orderData) => {
+    // Get all orders
+    getAllOrders: async () => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/order`, orderData, {
+            const response = await axios.get(`${API_BASE_URL}/api/order/`, {
+                headers: getDefaultHeaders(),
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching orders:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Create a new order
+    createOrder: async (userId, orderData) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/api/order/createOrder/${userId}`, orderData, {
                 headers: getDefaultHeaders(),
             });
             return response.data;
         } catch (error) {
             console.error("Error creating order:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Update order status
+    updateOrderStatus: async (orderId, orderData) => {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/api/order/${orderId}`, orderData, {
+                headers: getDefaultHeaders(),
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error updating order status:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Delete an order
+    deleteOrder: async (orderId) => {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/api/order/deleteOrder`, {
+                headers: getDefaultHeaders(),
+                params: { orderId },
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error deleting order:", error.response?.data || error.message);
             throw error;
         }
     },
@@ -105,6 +133,20 @@ const OrderItemsService = {
             throw error;
         }
     },
+    // Get products by category with pagination
+    getProductsByCategory: async (id) => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/orderItems/${id}`, {
+                headers: getDefaultHeaders(),
+            });
+            // The backend returns a ResponseDTO object; extract the items field
+            return response.data?.data || []; // Adjust based on ResponseDTO structure
+        } catch (error) {
+            console.error("Error fetching products by category:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
 };
 
 export { ShoppingCartService, OrderService, OrderItemsService };

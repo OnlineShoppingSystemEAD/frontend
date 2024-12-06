@@ -160,6 +160,7 @@ const userService = {
 
             // Decode the token to extract the role
             const decodedToken = jwtDecode(token);
+            console.log("Role " + decodedToken.role)
             return decodedToken.role || null; // Return the role or null if not present
         } catch (error) {
             console.error("Error decoding token:", error.message);
