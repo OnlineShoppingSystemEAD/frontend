@@ -69,14 +69,15 @@ const Payment = () => {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
-          <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-dark transition mt-4">Done</button>
+        <div className="flex justify">
+          <button className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-dark transition mt-4">Done</button>
+          
         </div>
       </div>
 
       {/* Add New Payment Method */}
       <div className="mt-8 flex justify-center">
-        <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-dark transition">
+        <button className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-dark transition">
           <span className="mr-2">+</span> Add Payment Method
         </button>
       </div>

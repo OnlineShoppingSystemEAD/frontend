@@ -23,6 +23,7 @@ const ProductOverview = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [quantity, setQuantity] = useState(1);
+    const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState(() => {
         const savedCart = localStorage.getItem('cart');
         return savedCart ? JSON.parse(savedCart) : [];
@@ -37,6 +38,8 @@ const ProductOverview = () => {
                 setProducts(response.data || []);
             } catch (error) {
                 console.error('Failed to load products or categories:', error.message);
+            }finally {
+                setLoading(false); // Set loading to false after fetching
             }
         };
         fetchData();
@@ -102,6 +105,14 @@ const ProductOverview = () => {
         setSelectedProduct(null);
         setIsModalOpen(false);
     };
+
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <p className="loading-text">Loading products...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="product-overview">
