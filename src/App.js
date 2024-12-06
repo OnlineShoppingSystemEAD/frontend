@@ -25,6 +25,7 @@ import ForgotPassword from "./pages/login/ForgotPassword";
 
 function App() {
     const isLoggedIn = userService.isTokenValid(); // Check if the user is logged in
+    const userRole = userService.getUserRole(); // Fetch user role (ADMIN or USER)
 
     return (
         <Router>
@@ -32,11 +33,10 @@ function App() {
                 {/* Redirect root "/" to Home page */}
                 <Route
                     path="/"
-                    element={
+                    element={userRole === 'ADMIN' ? <Orders /> :<PrivateRoute allowedRoles={["USER"]}>
                         <Home />
-                    }
+                    </PrivateRoute>}
                 />
-
                 {/* Public Routes */}
                 <Route
                     path="/login"
@@ -46,9 +46,9 @@ function App() {
                     path="/signup"
                     element={isLoggedIn ? <Navigate to="/" /> : <SignUp />}
                 />
-                <Route path="/emailVerification" element={<EmailVerification />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/emailVerification" element={isLoggedIn ? <Navigate to="/" /> : <EmailVerification />} />
+                <Route path="/forgot-password" element={isLoggedIn ? <Navigate to="/" /> : <ForgotPassword />} />
+                <Route path="/reset-password" element={isLoggedIn ? <Navigate to="/" /> : <ResetPassword />} />
 
                 {/* Protected User Routes */}
                 <Route
@@ -102,7 +102,7 @@ function App() {
                     }
                 />
                 <Route
-                    path="/category/:id"
+                    path="/category/:categoryId"
                     element={
                         <PrivateRoute allowedRoles={["ADMIN"]}>
                             <Category />
@@ -111,9 +111,9 @@ function App() {
                 />
 
                 {/* Other Public Routes */}
-                <Route path="/about" element={<About />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/contact" element={<Contact />} />
+                <Route path="/about" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <About />}  />
+                <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />/>
+                <Route path="/contact" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Contact />}  />
                 <Route path="*" element={<NotFound />} /> {/* Catch-all route */}
             </Routes>
         </Router>

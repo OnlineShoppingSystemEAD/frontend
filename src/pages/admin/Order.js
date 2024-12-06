@@ -1,58 +1,64 @@
-// OrderDetails.js
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../../styles/orderDetails.css';
 import Navbar from "../../components/admin/Navbar";
 import Footer from "../../components/user/Footer";
+import {OrderItemsService, OrderService} from '../../api/services/OrderService';
+import userService from "../../api/services/UserService";
 
 const Order = () => {
-    const location = useLocation();
+    const { id } = useParams(); // Retrieve orderId from the URL
     const navigate = useNavigate();
-    const order = location.state?.order;
 
+    const [order, setOrder] = useState(null); // State to store the order details
+    const [userData, setUserData] = useState(null); // State to store the user details
+    const [isLoading, setIsLoading] = useState(true); // State to manage loading state
     const [isEditMode, setEditMode] = useState(false);
-    const [updatedOrder, setUpdatedOrder] = useState({
-        ...order,
-        deliveryPerson: Array.isArray(order?.deliveryPerson) ? order.deliveryPerson : [], // Ensure deliveryPerson is an array
-    });
-    const [showAssignSlider, setShowAssignSlider] = useState(false);
+    const [updatedOrder, setUpdatedOrder] = useState(null);
 
-    const deliveryPeople = ["Name 1", "Name 2", "Name 3", "Name 4"];
+    // Fetch order and user details
+    useEffect(() => {
+        const fetchOrderAndUserDetails = async () => {
+            try {
+                setIsLoading(true);
+                // Fetch order details
+                const fetchedOrder = await OrderItemsService.getProductsByCategory(id);
+                setOrder(fetchedOrder);
+                setUpdatedOrder(fetchedOrder); // Initialize updated order state
 
-    if (!order) {
-        navigate('/');
-        return null;
-    }
+                // Fetch user details
+                const response = await userService.getUserProfileById(fetchedOrder.userId,fetchedOrder.userId, "USER");
+                setUserData(response.data);
+            } catch (error) {
+                console.error("Error fetching order or user details:", error);
+                navigate('/'); // Redirect to the home page in case of an error
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchOrderAndUserDetails();
+    }, [id, navigate]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setUpdatedOrder({ ...updatedOrder, [name]: value });
     };
 
-    const handleAssignClick = () => {
-        setShowAssignSlider(!showAssignSlider);
-    };
-
-    const handleAssignDeliveryPerson = (person) => {
-        // Add the person to the deliveryPerson list if not already assigned
-        if (!updatedOrder.deliveryPerson.includes(person)) {
-            setUpdatedOrder({
-                ...updatedOrder,
-                deliveryPerson: [...updatedOrder.deliveryPerson, person],
-            });
+    const handleSaveClick = async () => {
+        try {
+            // Send updated order data to the server
+            await OrderService.updateOrderStatus(id, updatedOrder);
+            setOrder(updatedOrder); // Update local order state
+            setEditMode(false);
+        } catch (error) {
+            console.error("Error updating order:", error);
         }
-        setShowAssignSlider(false); // Close the slider after selecting a person
     };
 
-    const handleUpdateClick = () => {
-        setEditMode(true);
-    };
-
-    const handleSaveClick = () => {
-        // Here you would typically send the updated order data to the server
-        console.log("Updated order data:", updatedOrder);
-        setEditMode(false);
-    };
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -63,155 +69,82 @@ const Order = () => {
                         <div className="order-image">
                             <img
                                 src="https://objectstorage.ap-mumbai-1.oraclecloud.com/n/softlogicbicloud/b/cdn/o/category-images/60ab26835e322.png"
-                                alt="Product"
+                                alt="Order"
                             />
                         </div>
                         <div className="order-summary">
-                            <h2>Order Number - {updatedOrder.orderNumber}</h2>
-                            <p>Product Name: {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="productName"
-                                    value={updatedOrder.productName}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                updatedOrder.productName
-                            )}</p>
-                            <p>Quantity: {isEditMode ? (
+                            <h2>Order Number - {order.id}</h2>
+                            <p>
+                                Total Price: {isEditMode ? (
                                 <input
                                     type="number"
-                                    name="quantity"
-                                    value={updatedOrder.quantity}
+                                    name="totalAmount"
+                                    value={updatedOrder.totalAmount}
                                     onChange={handleInputChange}
                                 />
                             ) : (
-                                updatedOrder.quantity
-                            )}</p>
+                                `$${order.totalAmount}`
+                            )}
+                            </p>
+                            <p>
+                                Status: {isEditMode ? (
+                                <select
+                                    name="status"
+                                    value={updatedOrder.status || "PENDING"}
+                                    onChange={handleInputChange}
+                                    className="status-dropdown"
+                                >
+                                    <option value="PENDING">PENDING</option>
+                                    <option value="PAID">PAID</option>
+                                    <option value="ON DELIVERY">ON DELIVERY</option>
+                                    <option value="COMPLETED">COMPLETED</option>
+                                </select>
+                            ) : (
+                                order.status || "N/A"
+                            )}
+                            </p>
                         </div>
                         <div className="order-actions">
                             {isEditMode ? (
                                 <button className="update-button" onClick={handleSaveClick}>Save</button>
                             ) : (
-                                <button className="update-button" onClick={handleUpdateClick}>Update</button>
+                                <button className="update-button" onClick={() => setEditMode(true)}>Edit</button>
                             )}
-                            <button className="assign-button" onClick={handleAssignClick}>
-                                Assign Delivery Person
-                            </button>
                         </div>
                     </div>
 
                     <div className="order-details">
                         <div className="detail-row">
-                            <strong>Customer Name:</strong>
+                            <strong>Shipping Address:</strong>
                             {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="customerName"
-                                    value={updatedOrder.customerName}
+                                    name="shippingAddress"
+                                    value={updatedOrder.shippingAddress}
                                     onChange={handleInputChange}
                                 />
                             ) : (
-                                <span>{updatedOrder.customerName}</span>
+                                <span>{order.shippingAddress}</span>
                             )}
                         </div>
                         <div className="detail-row">
-                            <strong>Email Address:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={updatedOrder.email}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.email}</span>
-                            )}
+                            <strong>User Name:</strong>
+                            <span>{userData?.name || "N/A"}</span>
                         </div>
                         <div className="detail-row">
-                            <strong>Billing Address:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="billingAddress"
-                                    value={updatedOrder.billingAddress}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.billingAddress}</span>
-                            )}
-                        </div>
-                        <div className="detail-row">
-                            <strong>Total Price:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="price"
-                                    value={updatedOrder.price}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.price}</span>
-                            )}
-                        </div>
-                        <div className="detail-row">
-                            <strong>Delivery Person:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="deliveryPerson"
-                                    value={updatedOrder.deliveryPerson || ""}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.deliveryPerson || "None"}</span>
-                            )}
-                        </div>
-
-                        {/* Slider for Assigning Delivery Person */}
-                        {showAssignSlider && (
-                            <div className="assign-slider">
-                                {deliveryPeople.map((person, index) => (
-                                    <div
-                                        key={index}
-                                        className="slider-item"
-                                        onClick={() => handleAssignDeliveryPerson(person)}
-                                    >
-                                        {person}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="detail-row">
-                            <strong>Status:</strong>
-                            {isEditMode ? (
-                                <select
-                                    name="status"
-                                    value={updatedOrder.status}
-                                    onChange={handleInputChange}
-                                    className="status-dropdown"
-                                >
-                                    <option value="Paid">Paid</option>
-                                    <option value="On Delivery">On Delivery</option>
-                                    <option value="Packing">Packing</option>
-                                    <option value="Completed">Completed</option>
-                                </select>
-                            ) : (
-                                <span>{updatedOrder.status}</span>
-                            )}
+                            <strong>User Email:</strong>
+                            <span>{userData?.email || "N/A"}</span>
                         </div>
                     </div>
 
                     <div className="footer-actions">
-                    <button className="back-button" onClick={() => navigate(-1)}>Back</button>
+                        <button className="back-button" onClick={() => navigate(-1)}>Back</button>
+                    </div>
                 </div>
+            </main>
+            <Footer />
         </div>
-</main>
-    <Footer/>
-</div>
-)
-    ;
+    );
 };
 
 export default Order;
