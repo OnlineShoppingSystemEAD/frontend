@@ -33,10 +33,19 @@ function App() {
                 {/* Redirect root "/" to Home page */}
                 <Route
                     path="/"
-                    element={userRole === 'ADMIN' ? <Orders /> :<PrivateRoute allowedRoles={["USER"]}>
-                        <Home />
-                    </PrivateRoute>}
+                    element={
+                        isLoggedIn ? (
+                            userRole === 'ADMIN' ? (
+                                <Orders />
+                            ) : (
+                                <Home />
+                            )
+                        ) : (
+                            <Home />
+                        )
+                    }
                 />
+
                 {/* Public Routes */}
                 <Route
                     path="/login"
@@ -112,7 +121,7 @@ function App() {
 
                 {/* Other Public Routes */}
                 <Route path="/about" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <About />}  />
-                <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />/>
+                <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />
                 <Route path="/contact" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Contact />}  />
                 <Route path="*" element={<NotFound />} /> {/* Catch-all route */}
             </Routes>

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import NotificationDropdown from "./NotificationDropdown"; // Component for the notification dropdown
 import adminService from "../../api/services/UserService"; // Service for logout functionality
 
 // Confirmation Modal Component
@@ -33,13 +32,6 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
 };
 
 const Navbar = () => {
-  const notificationsData = [
-    { message: "New Order Alert", date: "04/10" },
-    { message: "Delivery Completed", date: "04/10" },
-  ];
-
-  const [isNotificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState(notificationsData);
   const [isModalOpen, setIsModalOpen] = useState(false); // Fixed variable name
   const location = useLocation();
 
@@ -57,13 +49,6 @@ const Navbar = () => {
 
   const cancelLogout = () => {
     setIsModalOpen(false); // Just close the modal if the user cancels
-  };
-
-  const toggleNotificationDropdown = () => setNotificationOpen(!isNotificationOpen);
-
-  const markAsRead = () => {
-    setNotifications([]); // Clear notifications
-    setNotificationOpen(false); // Close the dropdown
   };
 
   return (
@@ -95,29 +80,6 @@ const Navbar = () => {
 
       {/* Navbar Right */}
       <div className="flex items-center space-x-4">
-        {/* Notification Bell Icon */}
-        <div className="relative">
-          <FontAwesomeIcon
-            icon={faBell}
-            className="text-gray-700 text-base cursor-pointer hover:text-purple-500"
-            onClick={toggleNotificationDropdown}
-          />
-          {notifications.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full px-2 text-xs">
-              {notifications.length}
-            </span>
-          )}
-          {isNotificationOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50">
-              <NotificationDropdown
-                isOpen={isNotificationOpen}
-                notifications={notifications}
-                onMarkAsRead={markAsRead}
-              />
-            </div>
-          )}
-        </div>
-
         {/* Logout Icon */}
         <FontAwesomeIcon
           icon={faRightFromBracket}
