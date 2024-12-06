@@ -37,18 +37,24 @@ const Navbar = () => {
         <div className="text-xl font-bold">SHOPZEN</div>
         {/* Navigation Links */}
         <nav className="ml-8 flex space-x-6">
-          <a
-            href="/orders"
-            className="text-gray-700 hover:text-purple-500 font-medium text-sm"
-          >
-            Orders
-          </a>
-          <a
-            href="/categories"
-            className="text-gray-700 hover:text-purple-500 font-medium text-sm"
+        <Link
+  to="/orders"
+  className={`${
+    isActive("/orders") ? "text-purple-500" : "text-gray-700"
+  } hover:text-purple-500 font-medium text-sm`}
+>
+  Orders
+</Link>
+
+<Link
+            to="/categories"
+            className={`${
+              isActive("/categories") ? "text-purple-500" : "text-gray-700"
+            } hover:text-purple-500 font-medium text-sm`}
           >
             Categories
-          </a>
+          </Link>
+
         </nav>
       </div>
 
@@ -76,16 +82,6 @@ const Navbar = () => {
             </div>
           )}
         </div>
-
-        {/* Account Icon */}
-        <Link to="/account">
-          <FontAwesomeIcon
-            icon={faUser}
-            className={`text-base cursor-pointer ${
-              isActive("/account") ? "text-purple-500" : "text-gray-700"
-            } hover:text-purple-500`}
-          />
-        </Link>
 
         {/* Logout Icon */}
         <FontAwesomeIcon
