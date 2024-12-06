@@ -10,9 +10,38 @@ import {
 import CartSidebar from "../user/Cart/CartSidebar";
 import userService from "../../api/services/UserService"; // Import userService
 
+
+// Confirmation Modal Component
+const ConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null; // Don't render the modal if not open
+
+  return (
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+        <h3 className="text-lg font-bold mb-4 text-gray-700">Are you sure you want to log out?</h3>
+        <div className="flex justify-end space-x-4">
+          <button
+            className="px-4 py-2 bg-black text-white rounded-md hover:bg-purple-500"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-black"
+            onClick={onConfirm}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Header = () => {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate(); // Hook for programmatic navigation
 
@@ -24,9 +53,19 @@ const Header = () => {
   const isLoggedIn = userService.isTokenValid(); // Check if the user is logged in
 
   const handleLogout = () => {
+    setIsModalOpen(true); // Open the modal when logout is clicked
+  };
+
+  const confirmLogout = () => {
     userService.logout(); // Clear tokens from localStorage
     window.location.reload(); // Reload the page to update UI
+    setIsModalOpen(false); // Close the modal
   };
+
+  const cancelLogout = () => {
+    setIsModalOpen(false); // Just close the modal if the user cancels
+  };
+
 
   const handleAccountClick = () => {
     if (isLoggedIn) {
@@ -137,6 +176,12 @@ const Header = () => {
             />
           )}
         </div>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onClose={cancelLogout}
+        onConfirm={confirmLogout}
+      />
       </div>
 
       {/* Cart Sidebar */}
