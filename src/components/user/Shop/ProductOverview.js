@@ -156,17 +156,21 @@ const ProductOverview = () => {
                 <div className="modal-overlay" onClick={closeQuickView}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <span className="close-modal" onClick={closeQuickView}>&times;</span>
+                        <br/>
                         <div className="quick-view-container">
                             <div className="quick-view-image">
-                                <Carousel images={carouselImages} />
+                                <Carousel images={carouselImages} isModalOpen={true}/>
                             </div>
                             <div className="quick-view-details">
+                                <br/>
                                 <h2>{selectedProduct.name}</h2>
                                 <p className="product-price">Price: ${selectedProduct.price}</p>
                                 <div className="quantity-add">
+                                    <div className='quantity-controls'>
                                     <button onClick={decreaseQuantity}>-</button>
                                     <input type="number" value={quantity} readOnly />
                                     <button onClick={increaseQuantity}>+</button>
+                                    </div>
                                     <button
                                         className="add-cart-btn"
                                         onClick={() => addToCart(selectedProduct)}
