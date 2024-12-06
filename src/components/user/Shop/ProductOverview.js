@@ -131,6 +131,7 @@ const ProductOverview = () => {
                             className={selectedCategoryId === category.id ? 'active' : ''}
                             onClick={() => setSelectedCategoryId(category.id)}
                         >
+                            console.log("category loaded.");
                             {category.name}
                         </span>
                     ))}

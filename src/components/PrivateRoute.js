@@ -59,6 +59,12 @@ const PrivateRoute = ({
         return <Navigate to="/" replace />;
     }
 
+    // Special condition: Restrict admins from accessing Home
+    if (userRole === "ADMIN" && window.location.pathname === "/home") {
+        return <Navigate to="/orders" replace />;
+    }
+    
+
     // Allow access to the route
     return children;
 };
