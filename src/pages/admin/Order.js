@@ -3,56 +3,71 @@ import { useParams, useNavigate } from 'react-router-dom';
 import '../../styles/orderDetails.css';
 import Navbar from "../../components/admin/Navbar";
 import Footer from "../../components/user/Footer";
-import {OrderItemsService, OrderService} from '../../api/services/OrderService';
-import userService from "../../api/services/UserService";
+import { OrderItemsService, OrderService } from '../../api/services/OrderService';
+import UserService from "../../api/services/UserService";
 
 const Order = () => {
-    const { id } = useParams(); // Retrieve orderId from the URL
+    const { orderId } = useParams(); // Retrieve orderId from the URL
     const navigate = useNavigate();
 
     const [order, setOrder] = useState(null); // State to store the order details
-    const [userData, setUserData] = useState(null); // State to store the user details
+    const [products, setProducts] = useState([]); // State to store products
     const [isLoading, setIsLoading] = useState(true); // State to manage loading state
-    const [isEditMode, setEditMode] = useState(false);
-    const [updatedOrder, setUpdatedOrder] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false); // State for edit mode
+    const [updatedStatus, setUpdatedStatus] = useState(''); // State for editable status
 
-    // Fetch order and user details
     useEffect(() => {
-        const fetchOrderAndUserDetails = async () => {
+        const fetchOrderDetails = async () => {
             try {
-                setIsLoading(true);
-                // Fetch order details
-                const fetchedOrder = await OrderItemsService.getProductsByCategory(id);
-                setOrder(fetchedOrder);
-                setUpdatedOrder(fetchedOrder); // Initialize updated order state
+                const fetchedOrder = await OrderItemsService.getProductsByOrder(orderId);
 
-                // Fetch user details
-                const response = await userService.getUserProfileById(fetchedOrder.userId,fetchedOrder.userId, "USER");
-                setUserData(response.data);
-            } catch (error) {
-                console.error("Error fetching order or user details:", error);
-                navigate('/'); // Redirect to the home page in case of an error
-            } finally {
+                if (fetchedOrder && fetchedOrder.length > 0) {
+                    const orderDetails = fetchedOrder[0].order;
+                    const userId = orderDetails.userId;
+
+                    // Fetch user profile
+                    const userResponse = await UserService.getUserProfileById(userId, userId, "USER");
+                    const userData = userResponse.data;
+
+                    // Combine user and order data
+                    const combinedOrderDetails = {
+                        ...orderDetails,
+                        customerName: `${userData.firstName} ${userData.lastName}`,
+                        email: userData.email,
+                        billingAddress: `${userData.houseNumber}, ${userData.addressLine1}, ${userData.addressLine2}`,
+                    };
+
+                    setOrder(combinedOrderDetails);
+                    setProducts(
+                        fetchedOrder.map(item => ({
+                            itemName: item.itemName || "N/A",
+                            quantity: item.quantity || 0,
+                            itemPrice: item.itemPrice || 0,
+                        }))
+                    );
+                    setUpdatedStatus(orderDetails.status || "N/A");
+                }
                 setIsLoading(false);
+            } catch (error) {
+                console.error("Error fetching order details:", error);
+                navigate('/'); // Redirect to the home page in case of an error
             }
         };
 
-        fetchOrderAndUserDetails();
-    }, [id, navigate]);
+        fetchOrderDetails();
+    }, [orderId, navigate]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setUpdatedOrder({ ...updatedOrder, [name]: value });
+    const handleStatusChange = (e) => {
+        setUpdatedStatus(e.target.value);
     };
 
     const handleSaveClick = async () => {
         try {
-            // Send updated order data to the server
-            await OrderService.updateOrderStatus(id, updatedOrder);
-            setOrder(updatedOrder); // Update local order state
-            setEditMode(false);
+            await OrderService.updateOrderStatus(orderId, { status: updatedStatus });
+            setOrder(prev => ({ ...prev, status: updatedStatus })); // Update local state
+            setIsEditMode(false); // Exit edit mode
         } catch (error) {
-            console.error("Error updating order:", error);
+            console.error("Error updating order status:", error);
         }
     };
 
@@ -65,80 +80,71 @@ const Order = () => {
             <Navbar />
             <main className="flex-grow">
                 <div className="order-details-container">
-                    <div className="order-header">
-                        <div className="order-image">
-                            <img
-                                src="https://objectstorage.ap-mumbai-1.oraclecloud.com/n/softlogicbicloud/b/cdn/o/category-images/60ab26835e322.png"
-                                alt="Order"
-                            />
+                    <h2>Order Number - {orderId}</h2>
+                    <div className="order-details">
+                        <div className="detail-row">
+                            <strong>Customer Name:</strong> {order.customerName || "N/A"}
                         </div>
-                        <div className="order-summary">
-                            <h2>Order Number - {order.id}</h2>
-                            <p>
-                                Total Price: {isEditMode ? (
-                                <input
-                                    type="number"
-                                    name="totalAmount"
-                                    value={updatedOrder.totalAmount}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                `$${order.totalAmount}`
-                            )}
-                            </p>
-                            <p>
-                                Status: {isEditMode ? (
+                        <div className="detail-row">
+                            <strong>Email Address:</strong> {order.email || "N/A"}
+                        </div>
+                        <div className="detail-row">
+                            <strong>Billing Address:</strong> {order.billingAddress || "N/A"}
+                        </div>
+                        <div className="detail-row">
+                            <strong>Total Price:</strong> {order.totalAmount || "N/A"}
+                        </div>
+                        <div className="detail-row">
+                            <strong>Status:</strong> {isEditMode ? (
+                            order.status === "PAID" ? (
                                 <select
-                                    name="status"
-                                    value={updatedOrder.status || "PENDING"}
-                                    onChange={handleInputChange}
-                                    className="status-dropdown"
+                                    value={updatedStatus}
+                                    onChange={handleStatusChange}
                                 >
-                                    <option value="PENDING">PENDING</option>
                                     <option value="PAID">PAID</option>
-                                    <option value="ON DELIVERY">ON DELIVERY</option>
+                                    <option value="DELIVERY">DELIVERY</option>
                                     <option value="COMPLETED">COMPLETED</option>
                                 </select>
                             ) : (
-                                order.status || "N/A"
-                            )}
-                            </p>
-                        </div>
-                        <div className="order-actions">
-                            {isEditMode ? (
-                                <button className="update-button" onClick={handleSaveClick}>Save</button>
-                            ) : (
-                                <button className="update-button" onClick={() => setEditMode(true)}>Edit</button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="order-details">
-                        <div className="detail-row">
-                            <strong>Shipping Address:</strong>
-                            {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="shippingAddress"
-                                    value={updatedOrder.shippingAddress}
-                                    onChange={handleInputChange}
+                                    value={updatedStatus}
+                                    onChange={handleStatusChange}
                                 />
-                            ) : (
-                                <span>{order.shippingAddress}</span>
-                            )}
-                        </div>
-                        <div className="detail-row">
-                            <strong>User Name:</strong>
-                            <span>{userData?.name || "N/A"}</span>
-                        </div>
-                        <div className="detail-row">
-                            <strong>User Email:</strong>
-                            <span>{userData?.email || "N/A"}</span>
+                            )
+                        ) : (
+                            order.status || "N/A"
+                        )}
                         </div>
                     </div>
 
-                    <div className="footer-actions">
-                        <button className="back-button" onClick={() => navigate(-1)}>Back</button>
+                    <div className="order-products">
+                        <h3>Products</h3>
+                        {products.map((product, index) => (
+                            <div key={index} className="product-item">
+                                <p>
+                                    <strong>Item Name:</strong> {product.itemName}
+                                </p>
+                                <p>
+                                    <strong>Quantity:</strong> {product.quantity}
+                                </p>
+                                <p>
+                                    <strong>Price:</strong> {product.itemPrice}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="order-actions">
+                        {isEditMode ? (
+                            <button className="save-button" onClick={handleSaveClick}>
+                                Save Status
+                            </button>
+                        ) : (
+                            <button className="edit-button" onClick={() => setIsEditMode(true)}>
+                                Edit Status
+                            </button>
+                        )}
                     </div>
                 </div>
             </main>

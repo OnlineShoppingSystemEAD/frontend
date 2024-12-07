@@ -134,13 +134,13 @@ const OrderItemsService = {
         }
     },
     // Get products by category with pagination
-    getProductsByCategory: async (id) => {
+    getProductsByOrder: async (id) => {
         try {
             const response = await axios.get(`${API_BASE_URL}/api/orderItems/${id}`, {
                 headers: getDefaultHeaders(),
             });
             // The backend returns a ResponseDTO object; extract the items field
-            return response.data?.data || []; // Adjust based on ResponseDTO structure
+            return response.data; // Adjust based on ResponseDTO structure
         } catch (error) {
             console.error("Error fetching products by category:", error.response?.data || error.message);
             throw error;

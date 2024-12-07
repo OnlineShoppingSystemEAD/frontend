@@ -54,11 +54,6 @@ const PrivateRoute = ({
         return <Navigate to="/" replace />;
     }
 
-    // Redirect to home page (`/`) if the user's role is not allowed to access this route
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-        return <Navigate to="/" replace />;
-    }
-
     // Allow access to the route
     return children;
 };
