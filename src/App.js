@@ -103,7 +103,7 @@ function App() {
                     }
                 />
                 <Route
-                    path="/order/:id"
+                    path="/order/:orderId"
                     element={
                         <PrivateRoute allowedRoles={["ADMIN"]}>
                             <Order />
