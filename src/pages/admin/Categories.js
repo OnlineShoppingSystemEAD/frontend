@@ -23,7 +23,7 @@ const CategoryGrid = () => {
                 const response = await ProductService.getCategories();
                 let data = response.data || []; // Ensure data is initialized as an array
 
-                // "ADD" object to be appended
+                // Add "NEW" object to the list
                 const add = {
                     id: 0,
                     name: "NEW",
@@ -31,12 +31,9 @@ const CategoryGrid = () => {
                     imageURL: "https://media.istockphoto.com/id/688550958/vector/black-plus-sign-positive-symbol.jpg?s=612x612&w=0&k=20&c=0tymWBTSEqsnYYXWeWmJPxMotTGUwaGMGs6BMJvr7X4="
                 };
 
-                // Create a new array with the "ADD" object appended
+                // Append "NEW" to the categories list
                 data = [...data, add];
-
-                // Update state
                 setCategories(data);
-
             } catch (error) {
                 console.error("Error loading categories:", error.message);
             } finally {
@@ -48,18 +45,26 @@ const CategoryGrid = () => {
     }, []);
 
     const closeModal = () => setModalOpen(false);
+
     const openDeleteModal = (category) => {
         setSelectedCategory(category);
         setDeleteModalOpen(true);
     };
+
     const closeDeleteModal = () => {
         setSelectedCategory(null);
         setDeleteModalOpen(false);
     };
 
-    const handleDelete = () => {
-        setCategories(categories.filter(cat => cat.id !== selectedCategory.id));
-        closeDeleteModal();
+    const handleDelete = async () => {
+        try {
+            console.log(selectedCategory.id)
+            await ProductService.deleteCategory(selectedCategory.id);
+            setCategories(categories.filter(cat => cat.id !== selectedCategory.id));
+            closeDeleteModal();
+        } catch (error) {
+            console.error("Error deleting category:", error.message);
+        }
     };
 
     const handleCategoryClick = (category) => {
@@ -87,13 +92,15 @@ const CategoryGrid = () => {
                         >
                             <h1 className="category-name">{category.name}</h1>
                             <img src={category.imageURL} alt={category.name} className="category-image" />
-                            <FaTrash
-                                className="icon-trash"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    openDeleteModal(category);
-                                }}
-                            />
+                            {category.id !== 0 && (
+                                <FaTrash
+                                    className="icon-trash"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDeleteModal(category);
+                                    }}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>
