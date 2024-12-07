@@ -1,34 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { OrderService } from "../../../api/services/OrderService";
 
 const CartSidebar = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
-
   const navigate = useNavigate();
 
-  // Function to load cart data from localStorage
-  const loadCartFromStorage = () => {
+  // Calculate the total price
+  const calculateTotal = useCallback((cart) => {
+    return cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  }, []);
+
+  // Load cart data from localStorage
+  const loadCartFromStorage = useCallback(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       const cart = JSON.parse(savedCart);
       setCartItems(cart);
-
-      // Calculate total price
-      const totalPrice = cart.reduce(
-          (sum, item) => sum + item.quantity * item.price,
-          0
-      );
-      setTotal(totalPrice);
+      setTotal(calculateTotal(cart));
     } else {
       setCartItems([]);
       setTotal(0);
     }
-  };
+  }, [calculateTotal]);
 
-  // Effect to load cart data on component mount and listen for updates
   useEffect(() => {
+    // Load cart data on component mount
     loadCartFromStorage();
 
     // Storage event listener for cross-tab updates
@@ -40,39 +38,33 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Polling mechanism to detect changes within the same tab
-    const interval = setInterval(() => {
-      const savedCart = localStorage.getItem("cart");
-      if (savedCart) {
-        const cart = JSON.parse(savedCart);
-        if (JSON.stringify(cart) !== JSON.stringify(cartItems)) {
-          setCartItems(cart);
-          const totalPrice = cart.reduce(
-              (sum, item) => sum + item.quantity * item.price,
-              0
-          );
-          setTotal(totalPrice);
-        }
-      } else if (cartItems.length > 0) {
-        setCartItems([]);
-        setTotal(0);
-      }
-    }, 500); // Poll every 500ms
-
-    // Cleanup on component unmount
+    // Cleanup listener on unmount
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
     };
-  }, [cartItems]);
+  }, [loadCartFromStorage]);
+
+  // Update cart automatically when localStorage changes in the same tab
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const savedCart = localStorage.getItem("cart");
+      const cart = savedCart ? JSON.parse(savedCart) : [];
+      const newTotal = calculateTotal(cart);
+
+      if (JSON.stringify(cart) !== JSON.stringify(cartItems) || total !== newTotal) {
+        setCartItems(cart);
+        setTotal(newTotal);
+      }
+    }, 500); // Check for updates every 500ms
+
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, [cartItems, total, calculateTotal]);
 
   // Handle Checkout
   const handleCheckout = async () => {
     try {
-      // Cache the total value in localStorage
       localStorage.setItem("cachedTotal", total);
 
-      // Prepare order data
       const orderData = {
         items: cartItems.map(({ id, quantity, price, name }) => ({
           productId: id,
@@ -82,17 +74,14 @@ const CartSidebar = ({ isOpen, onClose }) => {
         })),
         totalPrice: total,
       };
-      // Send order data to OrderService
-      const  response = await OrderService.createOrder(orderData);
+
+      const response = await OrderService.createOrder(orderData);
       localStorage.setItem("orderDetails", response.data);
 
-      // Clear the cart after successful order
       localStorage.removeItem("cart");
       setCartItems([]);
       setTotal(0);
       alert("Order placed successfully!");
-
-      // Navigate to checkout page
       navigate("/checkout");
     } catch (error) {
       console.error("Error placing order:", error.message);
