@@ -70,6 +70,17 @@ const ItemService = {
             throw error;
         }
     },
+        deleteCategory: async (id) => {
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/api/category/${id}`, {
+                    headers: getDefaultHeaders(),
+                });
+                return response.data;
+            } catch (error) {
+                console.error("Error deleting category:", error.response?.data || error.message);
+                throw error;
+            }
+        },
     // Update an existing item (Admin Only)
     updateItem: async (id, itemData) => {
         try {
