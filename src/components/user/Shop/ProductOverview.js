@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../../../styles/productOverview.css';
 import Carousel from "../Home/Carousel";
-import ProductService from '../../../api/services/ProductService'; // Assuming this is the service file
+import ProductService from '../../../api/services/ProductService'; // Product service file
 
 const carouselImages = [
     {
@@ -28,7 +28,19 @@ const ProductOverview = () => {
         const savedCart = localStorage.getItem('cart');
         return savedCart ? JSON.parse(savedCart) : [];
     });
-
+    
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await ProductService.getCategories();
+                setCategories(response.data || []);
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+            }
+        };
+        fetchData();
+    }, []);
+    
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -129,8 +141,7 @@ const ProductOverview = () => {
                         <span
                             key={category.id}
                             className={selectedCategoryId === category.id ? 'active' : ''}
-                            onClick={() => setSelectedCategoryId(category.id)}
-                        >
+                            onClick={() => setSelectedCategoryId(category.id)}>
                             {category.name}
                         </span>
                     ))}

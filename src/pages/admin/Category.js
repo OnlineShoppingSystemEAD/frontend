@@ -31,7 +31,11 @@ const Category = () => {
     }, [categoryId]);
 
     if (loading) {
-        return <div className="p-6 text-center">Loading products...</div>;
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-2xl text-purple-500 font-medium">Loading categories...</p>
+            </div>
+        );
     }
 
     if (error) {
@@ -44,43 +48,201 @@ const Category = () => {
             <main className="flex-grow">
                 <div className="category-items-container">
                     <h1>Products in Category {categoryId}</h1>
+                    <button
+                        onClick={() =>
+                            setProducts((prevProducts) => [
+                                ...prevProducts,
+                                {
+                                    id: 0, 
+                                    name: '',
+                                    quantity: 0,
+                                    price: 0,
+                                    status: 'Available',
+                                    images: [],
+                                    isNew: true, // Mark as a new row
+                                },
+                            ])
+                        }
+                        className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-black"
+                    >
+                        Add
+                    </button>
+
                     <table className="item-table">
                         <thead>
-                        <tr>
-                            <th>Item Code</th>
-                            <th>Product Name</th>
-                            <th>Stock Available</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                        </tr>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Product Name</th>
+                                <th>Stock Available</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Images</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {products.map((product) => (
-                            <tr key={product.id}>
-                                <td>{product.id}</td>
-                                <td>{product.name}</td>
-                                <td>{product.quantity}</td>
-                                <td>${product.price}</td>
-                                <td>
-                                    <select
-                                        value={product.quantity > 0 ? "Available" : "Unavailable"}
-                                        onChange={(e) =>
-                                            setProducts((prevProducts) =>
-                                                prevProducts.map((item) =>
-                                                    item.id === product.id
-                                                        ? { ...item, status: e.target.value }
-                                                        : item
+                            {products.map((product) => (
+                                <tr key={product.id}>
+                                    <td>
+                                        {product.isNew ? (
+                                            <input
+                                                type="text"
+                                                value={product.id}
+                                                onChange={(e) =>
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.map((item) =>
+                                                            item.id === product.id
+                                                                ? { ...item, id: e.target.value }
+                                                                : item
+                                                        )
+                                                    )
+                                                }
+                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                            />
+                                        ) : (
+                                            product.id
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        {product.isNew ? (
+                                            <input
+                                                type="text"
+                                                value={product.name}
+                                                onChange={(e) =>
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.map((item) =>
+                                                            item.id === product.id
+                                                                ? { ...item, name: e.target.value }
+                                                                : item
+                                                        )
+                                                    )
+                                                }
+                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                            />
+                                        ) : (
+                                            product.name
+                                        )}
+                                    </td>
+                                    <td>
+                                        {product.isNew ? (
+                                            <input
+                                                type="number"
+                                                value={product.quantity}
+                                                onChange={(e) =>
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.map((item) =>
+                                                            item.id === product.id
+                                                                ? { ...item, quantity: e.target.value }
+                                                                : item
+                                                        )
+                                                    )
+                                                }
+                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                            />
+                                        ) : (
+                                            product.quantity
+                                        )}
+                                    </td>
+                                    <td>
+                                        {product.isNew ? (
+                                            <input
+                                                type="number"
+                                                value={product.price}
+                                                onChange={(e) =>
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.map((item) =>
+                                                            item.id === product.id
+                                                                ? { ...item, price: e.target.value }
+                                                                : item
+                                                        )
+                                                    )
+                                                }
+                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                            />
+                                        ) : (
+                                            `$${product.price}`
+                                        )}
+                                    </td>
+                                    <td>
+                                        <select
+                                            value={product.status || product.quantity > 0 ? 'Available' : 'Unavailable'}
+                                            onChange={(e) =>
+                                                setProducts((prevProducts) =>
+                                                    prevProducts.map((item) =>
+                                                        item.id === product.id
+                                                            ? { ...item, status: e.target.value }
+                                                            : item
+                                                    )
                                                 )
-                                            )
-                                        }
-                                        className="status-dropdown"
-                                    >
-                                        <option value="Available">Available</option>
-                                        <option value="Unavailable">Unavailable</option>
-                                    </select>
-                                </td>
-                            </tr>
-                        ))}
+                                            }
+                                            className="status-dropdown"
+                                        >
+                                            <option value="Available">Available</option>
+                                            <option value="Unavailable">Unavailable</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files);
+                                                setProducts((prevProducts) =>
+                                                    prevProducts.map((item) =>
+                                                        item.id === product.id
+                                                            ? { ...item, images: files }
+                                                            : item
+                                                    )
+                                                );
+                                            }}
+                                        />
+                                    </td>
+                                    <td>
+                                        <div className="flex space-x-2 justify-center relative">
+                                            <button
+                                                onClick={() => {
+                                                    if (product.isNew) {
+                                                        setProducts((prevProducts) =>
+                                                            prevProducts.map((item) =>
+                                                                item.id === product.id
+                                                                    ? { ...item, isNew: false }
+                                                                    : item
+                                                            )
+                                                        );
+                                                    } else {
+                                                        alert(`Editing product: ${product.name}`);
+                                                    }
+                                                }}
+                                                className="bg-blue-400 text-white px-2 py-1 rounded hover:bg-blue-600 relative group"
+                                            >
+                                                {/* Conditional rendering for the icon */}
+                                                {product.isNew ? (
+                                                    <span className="text-orange-500 text-xl">✔️</span>
+                                                ) : (
+                                                    <span className="text-white text-xl">✏️</span>
+                                                )}
+                                                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {product.isNew ? 'Save' : 'Edit'}
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.filter((item) => item.id !== product.id)
+                                                    )
+                                                }
+                                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 relative group"
+                                            >
+                                                <span className="text-white text-xl">🗑️</span>
+                                                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    Delete
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
