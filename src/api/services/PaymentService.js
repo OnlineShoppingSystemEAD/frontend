@@ -10,13 +10,13 @@ if (!API_BASE_URL) {
 
 const PaymentService = {
     // Confirm payment
-    confirmPayment: async (paymentId, orderId, amount) => {
+    confirmPayment: async (orderId, amount) => {
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/payments/${paymentId}/confirm`,
+                `${API_BASE_URL}/payments/confirm`, // Updated to match the backend endpoint
                 null, // No request body, as parameters are passed as query params
                 {
-                    params: { orderId, amount },
+                    params: { orderId, amount }, // Query parameters as required by the backend
                     headers: getDefaultHeaders(),
                 }
             );
