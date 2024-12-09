@@ -57,9 +57,15 @@ const AccountDetails = ({file}) => {
     try {
       const userId = userService.getUserId();
       const formData = new FormData();
+      const role = userService.getUserRole();
       formData.append('userProfileDetails', JSON.stringify(accountData));
-      formData.append('profilePicture', file);
-      const response = await userService.updateUserProfile(userId, formData);
+      if (file) {
+        formData.append('profilePicture', file); // Append the file
+      }
+      else{
+        throw new Error(file.type +'Invalid File Type');
+      }
+      const response = await userService.updateUserProfile(userId, userId, role , formData);
 
       if (response) {
         const updatedData = {
