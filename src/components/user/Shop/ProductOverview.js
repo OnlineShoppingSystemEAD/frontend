@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import '../../../styles/productOverview.css';
 import Carousel from "./Carousel";
 import ProductService from '../../../api/services/ProductService'; // Product service file
+import { ShoppingCartService } from '../../../api/services/OrderService';
+import UserService from "../../../api/services/UserService"; // Backend service for cart actions
 
 const carouselImages = [
     {
@@ -28,7 +30,7 @@ const ProductOverview = () => {
         const savedCart = localStorage.getItem('cart');
         return savedCart ? JSON.parse(savedCart) : [];
     });
-    
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -40,7 +42,7 @@ const ProductOverview = () => {
         };
         fetchData();
     }, []);
-    
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -50,7 +52,7 @@ const ProductOverview = () => {
                 setProducts(response.data || []);
             } catch (error) {
                 console.error('Failed to load products or categories:', error.message);
-            }finally {
+            } finally {
                 setLoading(false); // Set loading to false after fetching
             }
         };
@@ -61,37 +63,66 @@ const ProductOverview = () => {
         localStorage.setItem('cart', JSON.stringify(cart));
     }, [cart]);
 
+    const logBackendCartData = async () => {
+        try {
+            const userId = UserService.getUserId(); // Replace with actual user ID retrieval logic
+            const backendCart = await ShoppingCartService.getShoppingCartByUserId(userId);
+            console.log("Backend Cart Data:", backendCart);
+        } catch (error) {
+            console.error("Error fetching backend cart data:", error.message);
+        }
+    };
+
     const increaseQuantity = () => setQuantity(quantity + 1);
     const decreaseQuantity = () => {
         if (quantity > 1) setQuantity(quantity - 1);
     };
 
-    const addToCart = (product) => {
+    const addToCart = async (product) => {
         const existingProduct = cart.find((item) => item.id === product.id);
 
         if (existingProduct) {
-            // Update quantity for an existing product
             const updatedCart = cart.map((item) =>
                 item.id === product.id
                     ? { ...item, quantity: item.quantity + quantity }
                     : item
             );
             setCart(updatedCart);
-            console.log("Updated product quantity:", updatedCart);
+
+            try {
+                await ShoppingCartService.updateShoppingCart(product.id, { quantity: existingProduct.quantity + quantity });
+                console.log("Updated product quantity in backend.");
+            } catch (error) {
+                console.error("Error updating cart in backend:", error.message);
+            }
         } else {
-            // Add new product to the cart
-            const newCart = [...cart, { ...product, quantity }];
+            const newCartItem = { ...product, quantity };
+            const newCart = [...cart, newCartItem];
             setCart(newCart);
-            console.log("Added new product:", newCart);
+
+            try {
+                await ShoppingCartService.createShoppingCartItem({ productId: product.id, quantity });
+                console.log("Added new product to backend cart.");
+            } catch (error) {
+                console.error("Error adding to backend cart:", error.message);
+            }
         }
 
         setQuantity(1); // Reset quantity
-        console.log("Current cart state:", cart);
+        await logBackendCartData();
     };
 
-
-    const removeFromCart = (productId) => {
+    const removeFromCart = async (productId) => {
         setCart(cart.filter((item) => item.id !== productId));
+
+        try {
+            await ShoppingCartService.deleteItemFromShoppingCart(productId);
+            console.log("Removed product from backend cart.");
+        } catch (error) {
+            console.error("Error removing product from backend cart:", error.message);
+        }
+
+        await logBackendCartData();
     };
 
     const filteredProducts = selectedCategoryId
@@ -174,82 +205,80 @@ const ProductOverview = () => {
             </div>
 
             {/* Modal */}
-{isModalOpen && selectedProduct && (
-    <div
-        className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        onClick={closeQuickView}
-    >
-        <div
-            className="modal-content bg-white rounded-lg shadow-lg w-11/12 max-w-4xl sm:max-w-3xl md:max-w-2xl lg:max-w-5xl xl:max-w-6xl flex flex-col md:flex-row gap-8 p-6 relative"
-            onClick={(e) => e.stopPropagation()}
-        >
-            <span
-                className="close-modal absolute top-4 right-4 text-gray-600 text-2xl cursor-pointer hover:text-gray-800"
-                onClick={closeQuickView}
-            >
-                &times;
-            </span>
+            {isModalOpen && selectedProduct && (
+                <div
+                    className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={closeQuickView}
+                >
+                    <div
+                        className="modal-content bg-white rounded-lg shadow-lg w-11/12 max-w-4xl sm:max-w-3xl md:max-w-2xl lg:max-w-5xl xl:max-w-6xl flex flex-col md:flex-row gap-8 p-6 relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span
+                            className="close-modal absolute top-4 right-4 text-gray-600 text-2xl cursor-pointer hover:text-gray-800"
+                            onClick={closeQuickView}
+                        >
+                            &times;
+                        </span>
 
-            <div className="quick-view-container flex flex-col md:flex-row gap-8 w-full">
-                {/* Image Carousel (Left Side) */}
-                <div className="quick-view-image md:w-1/2">
-                    <Carousel
-                        images={carouselImages.map((img) => img.src)} // Map to extract src
-                        isModalOpen={true}
-                    />
-                </div>
+                        <div className="quick-view-container flex flex-col md:flex-row gap-8 w-full">
+                            {/* Image Carousel (Left Side) */}
+                            <div className="quick-view-image md:w-1/2">
+                                <Carousel
+                                    images={carouselImages.map((img) => img.src)} // Map to extract src
+                                    isModalOpen={true}
+                                />
+                            </div>
 
-                {/* Product Details (Right Side) */}
-                <div className="quick-view-details md:w-1/2 flex flex-col gap-6">
-                    <h2 className="text-3xl font-bold text-gray-800">{selectedProduct.name}</h2>
-                    <p className="product-price text-xl text-gray-600">Price: ${selectedProduct.price}</p>
+                            {/* Product Details (Right Side) */}
+                            <div className="quick-view-details md:w-1/2 flex flex-col gap-6">
+                                <h2 className="text-3xl font-bold text-gray-800">{selectedProduct.name}</h2>
+                                <p className="product-price text-xl text-gray-600">Price: ${selectedProduct.price}</p>
 
-                    {/* Quantity Controls */}
-                    <div className="quantity-add flex flex-col gap-6">
-                        <div className="quantity-controls flex items-center gap-6">
-                            <button
-                                onClick={decreaseQuantity}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
-                            >
-                                -
-                            </button>
-                            <input
-                                type="number"
-                                value={quantity}
-                                readOnly
-                                className="w-16 text-center border border-gray-300 rounded"
-                            />
-                            <button
-                                onClick={increaseQuantity}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
-                            >
-                                +
-                            </button>
-                        </div>
+                                {/* Quantity Controls */}
+                                <div className="quantity-add flex flex-col gap-6">
+                                    <div className="quantity-controls flex items-center gap-6">
+                                        <button
+                                            onClick={decreaseQuantity}
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={quantity}
+                                            readOnly
+                                            className="w-16 text-center border border-gray-300 rounded"
+                                        />
+                                        <button
+                                            onClick={increaseQuantity}
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
 
-                        {/* Add to Cart and Remove from Cart Buttons */}
-                        <div className="flex gap-6">
-                            <button
-                                className="add-cart-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold px-2 py-2 rounded"
-                                onClick={() => addToCart(selectedProduct)}
-                            >
-                                ADD TO CART
-                            </button>
-                            <button
-                                className="remove-cart-btn bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-2 rounded"
-                                onClick={() => removeFromCart(selectedProduct.id)}
-                            >
-                                REMOVE FROM CART
-                            </button>
+                                    {/* Add to Cart and Remove from Cart Buttons */}
+                                    <div className="flex gap-6">
+                                        <button
+                                            className="add-cart-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold px-2 py-2 rounded"
+                                            onClick={() => addToCart(selectedProduct)}
+                                        >
+                                            ADD TO CART
+                                        </button>
+                                        <button
+                                            className="remove-cart-btn bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-2 rounded"
+                                            onClick={() => removeFromCart(selectedProduct.id)}
+                                        >
+                                            REMOVE FROM CART
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-)}
-
-
+            )}
         </div>
     );
 };

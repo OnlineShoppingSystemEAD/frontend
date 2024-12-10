@@ -52,10 +52,11 @@ const ShoppingCartService = {
     // Delete an item from the shopping cart
     deleteItemFromShoppingCart: async (id, userId) => {
         try {
-            await axios.delete(`${API_BASE_URL}/api/shoppingCart/${id}`, {
+            const response = await axios.delete(`${API_BASE_URL}/api/shoppingCart/${id}`, {
                 headers: getDefaultHeaders(),
                 params: { userId },
             });
+            return response;
         } catch (error) {
             console.error("Error deleting shopping cart item:", error.response?.data || error.message);
             throw error;
@@ -77,7 +78,18 @@ const OrderService = {
             throw error;
         }
     },
-
+    // Get order by order ID
+    getOrderByOrderId: async (orderId) => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/order/${orderId}`, {
+                headers: getDefaultHeaders(),
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching order by order ID:", error.response?.data || error.message);
+            throw error;
+        }
+    },
     // Create a new order
     createOrder: async (userId, orderData) => {
         try {

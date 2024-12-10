@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { OrderService } from "../../../api/services/OrderService";
-import userService from "../../../api/services/UserService";
 import UserService from "../../../api/services/UserService";
 
-const CartSidebar =  ({isOpen, onClose}) => {
+const CartSidebar = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
@@ -18,7 +17,12 @@ const CartSidebar =  ({isOpen, onClose}) => {
   const loadCartFromStorage = useCallback(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
-      const cart = JSON.parse(savedCart);
+      const cart = JSON.parse(savedCart).map((item) => ({
+        ...item,
+        name: item.itemName, // Rename to match component expectations
+        price: item.itemPrice, // Rename to match component expectations
+        quantity: item.itemQuantity, // Rename to match component expectations
+      }));
       setCartItems(cart);
       setTotal(calculateTotal(cart));
     } else {
@@ -50,7 +54,12 @@ const CartSidebar =  ({isOpen, onClose}) => {
   useEffect(() => {
     const interval = setInterval(() => {
       const savedCart = localStorage.getItem("cart");
-      const cart = savedCart ? JSON.parse(savedCart) : [];
+      const cart = savedCart ? JSON.parse(savedCart).map((item) => ({
+        ...item,
+        name: item.itemName,
+        price: item.itemPrice,
+        quantity: item.itemQuantity,
+      })) : [];
       const newTotal = calculateTotal(cart);
 
       if (JSON.stringify(cart) !== JSON.stringify(cartItems) || total !== newTotal) {
@@ -103,12 +112,6 @@ const CartSidebar =  ({isOpen, onClose}) => {
       // Save the order response to localStorage
       localStorage.setItem("orderDetails", JSON.stringify(response));
 
-      // Verify the saved data
-      const savedOrderDetails = JSON.parse(localStorage.getItem("orderDetails"));
-      const savedTotal = JSON.parse(localStorage.getItem("cachedTotal"));
-      console.log("Saved Order Details:", savedOrderDetails);
-      console.log("Saved Total Details:", savedTotal);
-
       // Clear the cart after successful order creation
       localStorage.removeItem("cart");
       setCartItems([]);
@@ -121,8 +124,6 @@ const CartSidebar =  ({isOpen, onClose}) => {
       alert(error.message || "Failed to place order. Please try again.");
     }
   };
-
-
 
   return (
       <div
