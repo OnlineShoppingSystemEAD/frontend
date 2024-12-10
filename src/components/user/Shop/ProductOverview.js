@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../../../styles/productOverview.css';
-import Carousel from "../Home/Carousel";
+import Carousel from "./Carousel";
 import ProductService from '../../../api/services/ProductService'; // Product service file
 
 const carouselImages = [
@@ -174,43 +174,82 @@ const ProductOverview = () => {
             </div>
 
             {/* Modal */}
-            {isModalOpen && selectedProduct && (
-                <div className="modal-overlay" onClick={closeQuickView}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <span className="close-modal" onClick={closeQuickView}>&times;</span>
-                        <br/>
-                        <div className="quick-view-container">
-                            <div className="quick-view-image">
-                                <Carousel images={carouselImages} isModalOpen={true}/>
-                            </div>
-                            <div className="quick-view-details">
-                                <br/>
-                                <h2>{selectedProduct.name}</h2>
-                                <p className="product-price">Price: ${selectedProduct.price}</p>
-                                <div className="quantity-add">
-                                    <div className='quantity-controls'>
-                                    <button onClick={decreaseQuantity}>-</button>
-                                    <input type="number" value={quantity} readOnly />
-                                    <button onClick={increaseQuantity}>+</button>
-                                    </div>
-                                    <button
-                                        className="add-cart-btn"
-                                        onClick={() => addToCart(selectedProduct)}
-                                    >
-                                        ADD TO CART
-                                    </button>
-                                    <button
-                                        className="remove-cart-btn"
-                                        onClick={() => removeFromCart(selectedProduct.id)}
-                                    >
-                                        REMOVE FROM CART
-                                    </button>
-                                </div>
-                            </div>
+{isModalOpen && selectedProduct && (
+    <div
+        className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        onClick={closeQuickView}
+    >
+        <div
+            className="modal-content bg-white rounded-lg shadow-lg w-11/12 max-w-4xl sm:max-w-3xl md:max-w-2xl lg:max-w-5xl xl:max-w-6xl flex flex-col md:flex-row gap-8 p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+        >
+            <span
+                className="close-modal absolute top-4 right-4 text-gray-600 text-2xl cursor-pointer hover:text-gray-800"
+                onClick={closeQuickView}
+            >
+                &times;
+            </span>
+
+            <div className="quick-view-container flex flex-col md:flex-row gap-8 w-full">
+                {/* Image Carousel (Left Side) */}
+                <div className="quick-view-image md:w-1/2">
+                    <Carousel
+                        images={carouselImages.map((img) => img.src)} // Map to extract src
+                        isModalOpen={true}
+                    />
+                </div>
+
+                {/* Product Details (Right Side) */}
+                <div className="quick-view-details md:w-1/2 flex flex-col gap-6">
+                    <h2 className="text-3xl font-bold text-gray-800">{selectedProduct.name}</h2>
+                    <p className="product-price text-xl text-gray-600">Price: ${selectedProduct.price}</p>
+
+                    {/* Quantity Controls */}
+                    <div className="quantity-add flex flex-col gap-6">
+                        <div className="quantity-controls flex items-center gap-6">
+                            <button
+                                onClick={decreaseQuantity}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                value={quantity}
+                                readOnly
+                                className="w-16 text-center border border-gray-300 rounded"
+                            />
+                            <button
+                                onClick={increaseQuantity}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-2 py-1 rounded"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        {/* Add to Cart and Remove from Cart Buttons */}
+                        <div className="flex gap-6">
+                            <button
+                                className="add-cart-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold px-2 py-2 rounded"
+                                onClick={() => addToCart(selectedProduct)}
+                            >
+                                ADD TO CART
+                            </button>
+                            <button
+                                className="remove-cart-btn bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-2 rounded"
+                                onClick={() => removeFromCart(selectedProduct.id)}
+                            >
+                                REMOVE FROM CART
+                            </button>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        </div>
+    </div>
+)}
+
+
         </div>
     );
 };

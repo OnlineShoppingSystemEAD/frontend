@@ -6,58 +6,6 @@
     font-family: 'Poppins', sans-serif;
 }
 
-.header-row {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    border-bottom: 1px solid #ccc;
-    padding: 10px 0;
-    margin-left: 2vw;
-}
-
-.header-row > div {
-    flex: 1;
-    text-align: start;
-}
-
-.status-column {
-    display: flex;
-    justify-content: space-between;
-}
-
-.sort-by {
-    font-size: 0.8rem;
-    margin-left: 10px;
-}
-
-.order-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f9f9f9;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 5px;
-    position: relative;
-}
-
-.order-row:hover {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.new-badge {
-    position: absolute;
-    left: -50px;
-    top: 0;
-    background-color: #5B67B6 !important;
-    color: #fff;
-    padding: 5px;
-    writing-mode: vertical-rl;
-    text-align: center;
-    border-radius: 5px 5px 0 0;
-    font-size: 0.8rem;
-}
-
 .product-image {
     flex: 0.5;
     display: flex;
@@ -76,11 +24,7 @@
     flex: 1;
     text-align: center;
 }
-.price-info{
-    flex: 1;
-    text-align: end;
-    margin-right: 10vw;
-}
+
 
 .status-info select {
     padding: 5px;

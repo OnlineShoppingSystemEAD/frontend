@@ -34,7 +34,7 @@ const Order = () => {
                         ...orderDetails,
                         customerName: `${userData.firstName} ${userData.lastName}`,
                         email: userData.email,
-                        billingAddress: `${userData.houseNumber}, ${userData.addressLine1}, ${userData.addressLine2}`,
+                        billingAddress: `${orderDetails.shippingAddress}`,
                     };
 
                     setOrder(combinedOrderDetails);
@@ -119,21 +119,27 @@ const Order = () => {
                     </div>
 
                     <div className="order-products">
-                        <h3>Products</h3>
-                        {products.map((product, index) => (
-                            <div key={index} className="product-item">
-                                <p>
-                                    <strong>Item Name:</strong> {product.itemName}
-                                </p>
-                                <p>
-                                    <strong>Quantity:</strong> {product.quantity}
-                                </p>
-                                <p>
-                                    <strong>Price:</strong> {product.itemPrice}
-                                </p>
-                            </div>
-                        ))}
+                        <h3 className="text-lg font-bold mb-4">Products</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {products.map((product, index) => (
+                                <div
+                                    key={index}
+                                    className="product-item bg-white shadow-lg rounded-lg p-4 border border-gray-200 hover:shadow-xl"
+                                >
+                                    <p className="text-sm font-medium mb-2">
+                                        <strong>Item Name:</strong> {product.itemName}
+                                    </p>
+                                    <p className="text-sm mb-2">
+                                        <strong>Quantity:</strong> {product.quantity}
+                                    </p>
+                                    <p className="text-sm mb-2">
+                                        <strong>Price:</strong> ${product.itemPrice.toFixed(2)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
+
 
                     <div className="order-actions">
                         {isEditMode ? (
