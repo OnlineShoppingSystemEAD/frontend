@@ -58,7 +58,11 @@ const AccountDetails = ({file}) => {
       const userId = userService.getUserId();
       const formData = new FormData();
       const role = userService.getUserRole();
-      formData.append('userProfileDetails', JSON.stringify(accountData));
+      formData.append(
+          "userProfileDetails",
+          new Blob([JSON.stringify(accountData)], { type: "application/json" })
+      );
+      
       if (file) {
         formData.append('profilePicture', file); // Append the file
       }
