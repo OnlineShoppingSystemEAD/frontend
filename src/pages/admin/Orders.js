@@ -56,30 +56,30 @@ const Orders = () => {
             <Navbar />
             <main className="flex-grow">
                 <div className="order-list-container">
-                    <div className="header-row">
+                    <div className="header-row grid grid-cols-[1fr,0.5fr,2fr,1fr,0.5fr] text-center font-bold py-2 border-b">
                         <div>Order</div>
+                        <div>Order No</div>
                         <div>Billing Address</div>
                         <div>Total Price</div>
                         <div className="status-column">
                             Status
-                            <div className="sort-by">Sort By</div>
                         </div>
                     </div>
                     {orders.map((order) => (
                         <div
                             onClick={() => handleOrderClick(order)}
-                            className="order-row"
+                            className="order-row grid grid-cols-[1fr,0.5fr,2fr,1fr,0.5fr] text-center items-center py-4 border-b hover:bg-gray-100 cursor-pointer"
                             key={order.id}
                         >
-                            <div className="new-badge">{order.id === 1 ? "NEW" : ""}</div>
-                            <div className="product-image">
+                            <div className="product-image flex justify-center items-center">
                                 <img
+                                    className="w-12 h-auto mx-auto"
                                     src="https://i5.walmartimages.com/seo/Gildan-Adult-Short-Sleeve-Crew-T-Shirt-for-Crafting-Black-Size-L-Soft-Cotton-Classic-Fit-1-Pack-Blank-Tee_85722d56-1379-4323-b738-c05a36fc7276.57f12aa3b01118d3922bca235bd5a185.jpeg"
                                     alt="Product"
                                 />
                             </div>
                             <div className="product-info">
-                                <p>Order NO {order.id}</p>
+                                <p>{order.id}</p>
                             </div>
                             <div className="billing-info">
                                 <p>{order.shippingAddress}</p>
@@ -88,11 +88,7 @@ const Orders = () => {
                                 <p>{order.totalAmount}</p>
                             </div>
                             <div className="status-info">
-                                <CustomDropdown
-                                    options={["PENDING", "PAID", "ON DELIVERY", "PACKING", "COMPLETED"]}
-                                    selected={order.status} // Use order's actual status
-                                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                />
+                                <p>{order.status}</p>
                             </div>
                         </div>
                     ))}
