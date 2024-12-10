@@ -47,11 +47,27 @@ const ItemService = {
         }
     },
     // Create a new item (Admin Only)
-    createItem: async (itemData) => {
+    createItem: async (itemData, images) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/admin/items`, itemData, {
-                headers: getDefaultHeaders(),
+            // Create a FormData object
+            const formData = new FormData();
+
+            // Append the item data as a JSON string
+            formData.append("item", new Blob([JSON.stringify(itemData)], { type: "application/json" }));
+
+            // Append each image file to the form data
+            images.forEach((image, index) => {
+                formData.append("images", image);
             });
+
+            // Make the POST request with multipart/form-data
+            const response = await axios.post(`${API_BASE_URL}/admin/items`, formData, {
+                headers: {
+                    ...getDefaultHeaders(),
+                    "Content-Type": "multipart/form-data", // Ensure Content-Type is set for FormData
+                },
+            });
+
             return response.data;
         } catch (error) {
             console.error("Error creating item:", error.response?.data || error.message);
@@ -63,24 +79,87 @@ const ItemService = {
             const response = await axios.get(`${API_BASE_URL}/api/categories`, {
                 headers: getDefaultHeaders(),
             });
-            console.log('API Response:', response); // Debugging log
-            return response.data; // Adjust this line to match your API's response structure
+            return response.data?.data || []; // Adjust based on ResponseDTO structure
         } catch (error) {
-            console.error("Error fetching items by category:", error.response?.data || error.message);
+            console.error("Error fetching categories:", error.response?.data || error.message);
             throw error;
         }
     },
-        deleteCategory: async (id) => {
-            try {
-                const response = await axios.delete(`${API_BASE_URL}/api/category/${id}`, {
-                    headers: getDefaultHeaders(),
-                });
-                return response.data;
-            } catch (error) {
-                console.error("Error deleting category:", error.response?.data || error.message);
-                throw error;
+
+    // Get category by ID
+    getCategoryById: async (id) => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/categories/${id}`, {
+                headers: getDefaultHeaders(),
+            });
+            return response; // Adjust based on ResponseDTO structure
+        } catch (error) {
+            console.error("Error fetching category by ID:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Create a new category
+    createCategory: async (categoryData, image, userId, role) => {
+        try {
+            const formData = new FormData();
+            formData.append("category", new Blob([JSON.stringify(categoryData)], { type: "application/json" }));
+            if (image) {
+                formData.append("image", image);
             }
-        },
+            formData.append("userId", userId);
+            formData.append("role", role);
+
+            const response = await axios.post(`${API_BASE_URL}/api/categories`, formData, {
+                headers: {
+                    ...getDefaultHeaders(),
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return response; // Adjust based on ResponseDTO structure
+        } catch (error) {
+            console.error("Error creating category:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Update a category by ID
+    updateCategory: async (id, categoryData, image, userId, role) => {
+        try {
+            const formData = new FormData();
+            formData.append("category", new Blob([JSON.stringify(categoryData)], { type: "application/json" }));
+            if (image) {
+                formData.append("image", image);
+            }
+            formData.append("userId", userId);
+            formData.append("role", role);
+
+            const response = await axios.put(`${API_BASE_URL}/api/categories/${id}`, formData, {
+                headers: {
+                    ...getDefaultHeaders(),
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return response; // Adjust based on ResponseDTO structure
+        } catch (error) {
+            console.error("Error updating category:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Delete a category by ID
+    deleteCategory: async (id, userId, role) => {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/api/categories/${id}`, {
+                params: { userId, role },
+                headers: getDefaultHeaders(),
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error deleting category:", error.response?.data || error.message);
+            throw error;
+        }
+    },
     // Update an existing item (Admin Only)
     updateItem: async (id, itemData) => {
         try {
@@ -106,6 +185,7 @@ const ItemService = {
             throw error;
         }
     },
+
 };
 
 export default ItemService;

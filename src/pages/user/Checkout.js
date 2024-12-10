@@ -63,8 +63,19 @@ const Checkout = () => {
       console.log("Order Id:", orderDetails.id);
       console.log("Cached Total:", cachedTotal);
 
-      const response = await PaymentService.confirmPayment(orderDetails.id, cachedTotal);
-      console.log(response);
+      try {
+        // Convert `cachedTotal` to a number to match the backend's `double` type
+        const orderId = parseInt(orderDetails.id, 10); // Convert to int
+        const amount = parseFloat(cachedTotal).toFixed(2); // Convert to double
+
+        // Make the API call with correctly formatted parameters
+        const response = await PaymentService.confirmPayment(orderId, amount);
+        console.log(response);
+      } catch (error) {
+        console.error("Error confirming payment:", error.response?.data || error.message);
+        throw error;
+      }
+
       alert("Payment successful! Redirecting to home...");
       localStorage.removeItem("orderDetails");
       localStorage.removeItem("cachedTotal");

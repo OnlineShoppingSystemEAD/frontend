@@ -4,6 +4,8 @@ import '../../styles/productList.css';
 import Navbar from "../../components/admin/Navbar";
 import Footer from "../../components/user/Footer";
 import ProductService from '../../api/services/ProductService';
+import CategoryService from '../../api/services/ProductService';
+import userService from "../../api/services/UserService";
 
 const Category = () => {
     const { categoryId } = useParams(); // Retrieve categoryId from the URL
@@ -15,82 +17,118 @@ const Category = () => {
     const [name, setName] = useState("Category Name");
     const [description, setDescription] = useState("Category Description");
     const [image, setImage] = useState(null);
-  
-    const handleEditToggle = () => {
-      setIsEditing((prev) => !prev);
+
+    const handleEditToggle = async () => {
+        const userId = userService.getUserId();
+        let response = ''
+        if (isEditing) {
+            try {
+                if (categoryId === "0") {
+                    // Create category
+                    response = await CategoryService.createCategory(
+                        { name, description },
+                        image,
+                        userId,
+                        "ADMIN"
+                    );
+                } else {
+                    // Update category
+                    response = await CategoryService.updateCategory(
+                        categoryId,
+                        { name, description },
+                        image,
+                        userId,
+                        "ADMIN"
+                    );
+                }
+                alert("Category saved successfully!");
+                console.log(response);
+            } catch (error) {
+                console.error("Error saving category:", error);
+                alert("Failed to save category. Please try again.");
+            }
+        }
+        setIsEditing((prev) => !prev);
     };
-  
+
     const handleImageChange = (e) => {
-      setImage(e.target.files[0]);
+        setImage(e.target.files[0]);
     };
 
     const handleSaveProduct = async (product) => {
         try {
+            if (!product) {
+                throw new Error("Product object is undefined");
+            }
 
-    
-            // If it's a new product
+            // Ensure images is always an array
+            const images = Array.isArray(product.images) ? product.images : [];
+            images.forEach((image) => {
+                console.log("Processing image:", image);
+            });
+
             if (product.isNew) {
-                const savedProduct = await ProductService.createProduct({
-                    categoryId: categoryId,
+                const savedProduct = await ProductService.createItem({
+                    categoryId,
                     name: product.name,
                     price: product.price,
                     quantity: product.quantity,
                     status: product.status,
-                    images: product.images
+                    images,
                 });
-    
-                // Replace the temporary product with the saved product
-                setProducts(prevProducts => 
-                    prevProducts.map(p => 
-                        p.isNew ? savedProduct : p
-                    )
+                setProducts((prevProducts) =>
+                    prevProducts.map((p) => (p.isNew ? savedProduct : p))
                 );
             } else {
-                // Existing product update
-                const updatedProduct = await ProductService.updateProduct(product.id, {
+                const updatedProduct = await ProductService.updateItem(product.id, {
                     name: product.name,
                     price: product.price,
                     quantity: product.quantity,
                     status: product.status,
-                    images: product.images
+                    images,
                 });
-    
-                // Update the product in the list
-                setProducts(prevProducts => 
-                    prevProducts.map(p => 
-                        p.id === product.id ? updatedProduct : p
-                    )
+                setProducts((prevProducts) =>
+                    prevProducts.map((p) => (p.id === product.id ? updatedProduct : p))
                 );
             }
-    
-            // Reset editing state
-            setProducts(prevProducts => 
-                prevProducts.map(p => ({
+
+            setProducts((prevProducts) =>
+                prevProducts.map((p) => ({
                     ...p,
                     isEditing: false,
-                    isNew: false
+                    isNew: false,
                 }))
             );
-    
         } catch (error) {
-            console.error('Error saving product:', error);
-            alert('Failed to save product. Please try again.');
+            console.error("Error saving product:", error);
+            alert("Failed to save product. Please try again.");
         }
     };
 
-    // Fetch products based on categoryId
+
+    const handleDeleteProduct = async (productId) => {
+        try {
+            await ProductService.deleteProduct(productId);
+            setProducts((prevProducts) =>
+                prevProducts.filter((product) => product.id !== productId)
+            );
+        } catch (error) {
+            console.error("Error deleting product:", error);
+            alert("Failed to delete product. Please try again.");
+        }
+    };
+
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                setLoading(true); // Start loading
+                setLoading(true);
                 const response = await ProductService.getProductsByCategory(categoryId, 0, 16);
-                console.log(response);
-                setProducts(response || []); // Set products state
+                setProducts(response || []);
             } catch (err) {
                 setError("Failed to load products. Please try again later.");
                 console.error("Error fetching products:", err.message);
             } finally {
-                setLoading(false); // End loading
+                setLoading(false);
             }
         };
 
@@ -116,56 +154,55 @@ const Category = () => {
                 <div className="category-items-container">
                     <h1>Products in Category {categoryId}</h1>
                     <div className="flex items-center space-x-4 p-4">
-                        {/* Name Input */}
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             disabled={!isEditing}
-                            className={`border p-2 rounded bg-white`}
+                            className="border p-2 rounded bg-white"
                         />
 
-                        {/* Image Upload Input */}
                         <input
                             type="file"
                             onChange={handleImageChange}
                             disabled={!isEditing}
-                            className={`border p-2 rounded bg-white`}
+                            className="border p-2 rounded bg-white"
                         />
 
-                        {/* Description Input */}
                         <input
                             type="text"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             disabled={!isEditing}
-                            className={`border p-2 rounded bg-white`}
+                            className="border p-2 rounded bg-white"
                         />
 
-                        {/* Edit/Save Button */}
                         <button
                             onClick={handleEditToggle}
                             className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
                         >
                             {isEditing ? "✔️ Save" : "✏️ Edit"}
                         </button>
-                        </div>
+                    </div>
 
-                        <button
+                    <button
                         onClick={() =>
                             setProducts((prevProducts) => [
                                 ...prevProducts,
                                 {
-                                    id: 0, 
-                                    name: '',
-                                    quantity: 0,
-                                    price: 0,
-                                    status: 'Available',
-                                    images: [],
-                                    isNew: true, // Mark as a new row
+                                    id: 0, // Default ID for a new product
+                                    name: '', // Empty name for a new product
+                                    description: '', // Empty description
+                                    price: 0.0, // Default price
+                                    quantity: 0, // Default quantity
+                                    categoryId: parseInt(categoryId, 10), // Use the categoryId from the current context
+                                    imageURL: '', // Empty primary image URL
+                                    otherImageURLs: [], // Empty list for other image URLs
+                                    isNew: true, // Mark as a new product
                                 },
                             ])
                         }
+
                         className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-black"
                     >
                         Add
@@ -173,180 +210,171 @@ const Category = () => {
 
                     <table className="item-table">
                         <thead>
-                            <tr>
-                                <th>Item Code</th>
-                                <th>Product Name</th>
-                                <th>Stock Available</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Images</th>
-                            </tr>
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Product Name</th>
+                            <th>Stock Available</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Images</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {products.map((product) => (
-                                <tr key={product.id}>
-                                    <td>
-                                        {product.isNew || product.isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={product.id}
-                                                onChange={(e) =>
-                                                    setProducts((prevProducts) =>
-                                                        prevProducts.map((item) =>
-                                                            item.id === product.id
-                                                                ? { ...item, id: e.target.value }
-                                                                : item
-                                                        )
-                                                    )
-                                                }
-                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
-                                            />
-                                        ) : (
-                                            product.id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {product.isNew || product.isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={product.name}
-                                                onChange={(e) =>
-                                                    setProducts((prevProducts) =>
-                                                        prevProducts.map((item) =>
-                                                            item.id === product.id
-                                                                ? { ...item, name: e.target.value }
-                                                                : item
-                                                        )
-                                                    )
-                                                }
-                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
-                                            />
-                                        ) : (
-                                            product.name
-                                        )}
-                                    </td>
-                                    <td>
-                                        {product.isNew || product.isEditing ? (
-                                            <input
-                                                type="number"
-                                                value={product.quantity}
-                                                onChange={(e) =>
-                                                    setProducts((prevProducts) =>
-                                                        prevProducts.map((item) =>
-                                                            item.id === product.id
-                                                                ? { ...item, quantity: e.target.value }
-                                                                : item
-                                                        )
-                                                    )
-                                                }
-                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
-                                            />
-                                        ) : (
-                                            product.quantity
-                                        )}
-                                    </td>
-                                    <td>
-                                        {product.isNew || product.isEditing ? (
-                                            <input
-                                                type="number"
-                                                value={product.price}
-                                                onChange={(e) =>
-                                                    setProducts((prevProducts) =>
-                                                        prevProducts.map((item) =>
-                                                            item.id === product.id
-                                                                ? { ...item, price: e.target.value }
-                                                                : item
-                                                        )
-                                                    )
-                                                }
-                                                className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
-                                            />
-                                        ) : (
-                                            `$${product.price}`
-                                        )}
-                                    </td>
-                                    <td>
-                                        <select
-                                            value={product.status || product.quantity > 0 ? 'Available' : 'Unavailable'}
+                        {products.map((product) => (
+                            <tr key={product.id}>
+                                <td>
+                                    {product.isNew || product.isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={product.id}
                                             onChange={(e) =>
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, status: e.target.value }
+                                                            ? { ...item, id: e.target.value }
                                                             : item
                                                     )
                                                 )
                                             }
-                                            className="status-dropdown"
-                                        >
-                                            <option value="Available">Available</option>
-                                            <option value="Unavailable">Unavailable</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="file"
-                                            multiple
-                                            onChange={(e) => {
-                                                const files = Array.from(e.target.files);
-                                                setProducts((prevProducts) =>
-                                                    prevProducts.map((item) =>
-                                                        item.id === product.id
-                                                            ? { ...item, images: files }
-                                                            : item
-                                                    )
-                                                );
-                                            }}
+                                            className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
                                         />
-                                    </td>
-                                    <td>
-                                        <div className="flex space-x-2 justify-center relative">
-                                        <button
-                                        onClick={() => {
-                                            if (product.isNew || product.isEditing) {
-                                                // If in editing mode, try to save
-                                                handleSaveProduct(product);
-                                            } else {
-                                                // If not in editing mode, enter editing mode
+                                    ) : (
+                                        product.id
+                                    )}
+                                </td>
+
+                                <td>
+                                    {product.isNew || product.isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={product.name}
+                                            onChange={(e) =>
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, isEditing: true }
+                                                            ? { ...item, name: e.target.value }
                                                             : item
                                                     )
-                                                );
+                                                )
                                             }
-                                        }}
-                                        className="bg-blue-400 text-white px-2 py-1 rounded hover:bg-blue-600 relative group"
-                                    >
-                                        {product.isNew || product.isEditing ? '✔️' : '✏️'}
-                                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-                                                        bg-black text-white text-xs rounded px-2 py-1 
-                                                        opacity-0 group-hover:opacity-100 
-                                                        transition-opacity duration-300 
-                                                        whitespace-nowrap z-10">
-                                                        {product.isNew || product.isEditing ? 'Save' : 'Edit'}
-                                        </span>
-                                    </button>
-
-                                            <button
-                                                onClick={() =>
-                                                    setProducts((prevProducts) =>
-                                                        prevProducts.filter((item) => item.id !== product.id)
+                                            className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                        />
+                                    ) : (
+                                        product.name
+                                    )}
+                                </td>
+                                <td>
+                                    {product.isNew || product.isEditing ? (
+                                        <input
+                                            type="number"
+                                            value={product.quantity}
+                                            onChange={(e) =>
+                                                setProducts((prevProducts) =>
+                                                    prevProducts.map((item) =>
+                                                        item.id === product.id
+                                                            ? { ...item, quantity: e.target.value }
+                                                            : item
                                                     )
+                                                )
+                                            }
+                                            className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                        />
+                                    ) : (
+                                        product.quantity
+                                    )}
+                                </td>
+                                <td>
+                                    {product.isNew || product.isEditing ? (
+                                        <input
+                                            type="number"
+                                            value={product.price}
+                                            onChange={(e) =>
+                                                setProducts((prevProducts) =>
+                                                    prevProducts.map((item) =>
+                                                        item.id === product.id
+                                                            ? { ...item, price: e.target.value }
+                                                            : item
+                                                    )
+                                                )
+                                            }
+                                            className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[100px] w-full"
+                                        />
+                                    ) : (
+                                        `$${product.price}`
+                                    )}
+                                </td>
+                                <td>
+                                    <select
+                                        value={product.status || product.quantity > 0 ? 'Available' : 'Unavailable'}
+                                        onChange={(e) =>
+                                            setProducts((prevProducts) =>
+                                                prevProducts.map((item) =>
+                                                    item.id === product.id
+                                                        ? { ...item, status: e.target.value }
+                                                        : item
+                                                )
+                                            )
+                                        }
+                                        className="status-dropdown"
+                                    >
+                                        <option value="Available">Available</option>
+                                        <option value="Unavailable">Unavailable</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files);
+                                            setProducts((prevProducts) =>
+                                                prevProducts.map((item) =>
+                                                    item.id === product.id
+                                                        ? { ...item, images: files }
+                                                        : item
+                                                )
+                                            );
+                                        }}
+                                    />
+                                </td>
+                                <td>
+                                    <div className="flex space-x-2 justify-center relative">
+                                        <button
+                                            onClick={() => {
+                                                if (product.isNew || product.isEditing) {
+                                                    console.log("pro:");
+                                                    for (const key in product) {
+                                                        if (Object.hasOwnProperty.call(product, key)) {
+                                                            console.log(`${key}: ${product[key]}`);
+                                                        }
+                                                    }
+
+                                                    handleSaveProduct(product);
+                                                } else {
+                                                    setProducts((prevProducts) =>
+                                                        prevProducts.map((item) =>
+                                                            item.id === product.id
+                                                                ? { ...item, isEditing: true }
+                                                                : item
+                                                        )
+                                                    );
                                                 }
-                                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 relative group"
-                                            >
-                                                <span className="text-white text-xl">🗑️</span>
-                                                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    Delete
-                                                </span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                            }}
+                                            className="bg-blue-400 text-white px-2 py-1 rounded hover:bg-blue-600 relative group"
+                                        >
+                                            {product.isNew || product.isEditing ? '✔️' : '✏️'}
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleDeleteProduct(product.id)}
+                                            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 relative group"
+                                        >
+                                            <span className="text-white text-xl">🗑️</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
                 </div>

@@ -82,9 +82,7 @@ const CartSection = () => {
 
     try {
       const updatedItem = updatedCart.find((item) => item.id === productId);
-      await ShoppingCartService.updateShoppingCart(productId, {
-        quantity: updatedItem.itemQuantity,
-      });
+      await ShoppingCartService.updateShoppingCart(productId, updatedItem.itemQuantity);
       console.log(`Cart item ${productId} updated successfully.`);
     } catch (error) {
       console.error(`Error updating cart item ${productId}:`, error.message);

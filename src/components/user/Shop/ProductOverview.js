@@ -91,7 +91,7 @@ const ProductOverview = () => {
 
             try {
                 console.log("pro " + product.id)
-                await ShoppingCartService.updateShoppingCart(product.id, { quantity: existingProduct.quantity + quantity });
+                await ShoppingCartService.updateShoppingCart(product.id, existingProduct.quantity + quantity);
                 console.log("Updated product quantity in backend.");
             } catch (error) {
                 console.error("Error updating cart in backend:", error.message);

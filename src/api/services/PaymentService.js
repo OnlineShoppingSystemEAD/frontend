@@ -25,12 +25,18 @@ const PaymentService = {
     // Confirm payment
     confirmPayment: async (orderId, amount) => {
         try {
-            const response = await apiClient.post("/payments/confirm",  {
-                params: { orderId, amount },
-            });
+            const response = await apiClient.post(
+                "/payments/confirm",
+                null, // No body
+                {
+                    headers: getDefaultHeaders(),
+                    params: { orderId, amount },
+                }
+            );
             return response.data;
         } catch (error) {
-            handleError(error);
+            console.error("Error confirming payment:", error.response?.data || error.message);
+            throw error;
         }
     },
 

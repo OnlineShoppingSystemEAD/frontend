@@ -37,12 +37,20 @@ const ShoppingCartService = {
     },
 
     // Update an item in the shopping cart
+    // Update an item in the shopping cart
     updateShoppingCart: async (id, updatedQuantity) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/api/shoppingCart/${id}`, {
-                headers: getDefaultHeaders(),
-                params : {updatedQuantity}
-            });
+            // Construct the payload if the API expects it in the body
+            const payload = { updatedQuantity };
+
+            const response = await axios.put(
+                `${API_BASE_URL}/api/shoppingCart/${id}`,
+                payload, // Include the updated quantity in the request body
+                {
+                    headers: getDefaultHeaders(),
+                    params: { updatedQuantity },
+                }
+            );
             return response.data;
         } catch (error) {
             console.error("Error updating shopping cart item:", error.response?.data || error.message);
@@ -106,7 +114,13 @@ const OrderService = {
     // Update order status
     updateOrderStatus: async (orderId, orderData) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/api/order/${orderId}`, orderData, {
+            // Construct the payload object
+            const payload = {
+                orderId,
+                orderData, // assuming orderData has a property orderStatus
+            };
+
+            const response = await axios.put(`${API_BASE_URL}/api/order/${orderId}`, payload, {
                 headers: getDefaultHeaders(),
             });
             return response.data;
@@ -115,6 +129,7 @@ const OrderService = {
             throw error;
         }
     },
+
 
     // Delete an order
     deleteOrder: async (orderId) => {
