@@ -90,6 +90,7 @@ const ProductOverview = () => {
             setCart(updatedCart);
 
             try {
+                console.log("pro " + product.id)
                 await ShoppingCartService.updateShoppingCart(product.id, { quantity: existingProduct.quantity + quantity });
                 console.log("Updated product quantity in backend.");
             } catch (error) {

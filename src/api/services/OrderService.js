@@ -37,10 +37,11 @@ const ShoppingCartService = {
     },
 
     // Update an item in the shopping cart
-    updateShoppingCart: async (id, itemData) => {
+    updateShoppingCart: async (id, updatedQuantity) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/api/shoppingCart/${id}`, itemData, {
+            const response = await axios.put(`${API_BASE_URL}/api/shoppingCart/${id}`, {
                 headers: getDefaultHeaders(),
+                params : {updatedQuantity}
             });
             return response.data;
         } catch (error) {
@@ -50,11 +51,10 @@ const ShoppingCartService = {
     },
 
     // Delete an item from the shopping cart
-    deleteItemFromShoppingCart: async (id, userId) => {
+    deleteItemFromShoppingCart: async (id) => {
         try {
             const response = await axios.delete(`${API_BASE_URL}/api/shoppingCart/${id}`, {
                 headers: getDefaultHeaders(),
-                params: { userId },
             });
             return response;
         } catch (error) {

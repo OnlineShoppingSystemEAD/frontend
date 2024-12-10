@@ -10,19 +10,14 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
   // Calculate the total price
   const calculateTotal = useCallback((cart) => {
-    return cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    return cart.reduce((sum, item) => sum + (item.quantity || item.itemQuantity )* (item.price || item.itemPrice ), 0);
   }, []);
 
   // Load cart data from localStorage
   const loadCartFromStorage = useCallback(() => {
     const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      const cart = JSON.parse(savedCart).map((item) => ({
-        ...item,
-        name: item.itemName, // Rename to match component expectations
-        price: item.itemPrice, // Rename to match component expectations
-        quantity: item.itemQuantity, // Rename to match component expectations
-      }));
+    if (savedCart && savedCart.length > 0) {
+      const cart = JSON.parse(savedCart);
       setCartItems(cart);
       setTotal(calculateTotal(cart));
     } else {
@@ -31,53 +26,35 @@ const CartSidebar = ({ isOpen, onClose }) => {
     }
   }, [calculateTotal]);
 
+  // Load cart on component mount and update automatically
   useEffect(() => {
-    // Load cart data on component mount
     loadCartFromStorage();
 
-    // Storage event listener for cross-tab updates
     const handleStorageChange = (event) => {
       if (event.key === "cart") {
         loadCartFromStorage();
       }
     };
 
+    // Add event listener for cross-tab updates
     window.addEventListener("storage", handleStorageChange);
 
-    // Cleanup listener on unmount
+    // Poll for same-tab updates
+    const interval = setInterval(() => {
+      loadCartFromStorage();
+    }, 500); // Poll every 500ms
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval); // Clear interval on unmount
     };
   }, [loadCartFromStorage]);
-
-  // Update cart automatically when localStorage changes in the same tab
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const savedCart = localStorage.getItem("cart");
-      const cart = savedCart ? JSON.parse(savedCart).map((item) => ({
-        ...item,
-        name: item.itemName,
-        price: item.itemPrice,
-        quantity: item.itemQuantity,
-      })) : [];
-      const newTotal = calculateTotal(cart);
-
-      if (JSON.stringify(cart) !== JSON.stringify(cartItems) || total !== newTotal) {
-        setCartItems(cart);
-        setTotal(newTotal);
-      }
-    }, 500); // Check for updates every 500ms
-
-    return () => clearInterval(interval); // Cleanup interval on unmount
-  }, [cartItems, total, calculateTotal]);
 
   // Handle Checkout
   const handleCheckout = async () => {
     try {
-      // Save the total amount to localStorage
-      localStorage.setItem("cachedTotal", JSON.stringify(total)); // Ensure total is saved as a string
+      localStorage.setItem("cachedTotal", JSON.stringify(total));
 
-      // Get the user ID and profile
       const userId = UserService.getUserId();
       if (!userId) {
         throw new Error("User ID is not available. Please log in.");
@@ -89,30 +66,23 @@ const CartSidebar = ({ isOpen, onClose }) => {
       }
 
       const user = userResponse.data;
-
-      // Construct the order data
       const orderData = {
-        userId: userId,
+        userId,
         paymentId: null,
-        shippingAddress: `${user.addressLine1 || ""} ${user.addressLine2 || ""}`,
+        shippingAddress: `${user.addressLine1 || ""} ${user.addressLine2 || ""}`.trim(),
         status: "PENDING",
         totalAmount: total,
-        items: cartItems.map(({ id, quantity, price, name }) => ({
+        items: cartItems.map(({ id, itemQuantity, price, itemName }) => ({
           productId: id,
-          name,
-          quantity,
-          price,
+          name: itemName,
+          quantity: itemQuantity,
+          price: price,
         })),
       };
 
-      // Create the order
       const response = await OrderService.createOrder(userId, orderData);
-      console.log("Order response:", response);
-
-      // Save the order response to localStorage
       localStorage.setItem("orderDetails", JSON.stringify(response));
 
-      // Clear the cart after successful order creation
       localStorage.removeItem("cart");
       setCartItems([]);
       setTotal(0);
@@ -144,17 +114,17 @@ const CartSidebar = ({ isOpen, onClose }) => {
                     <div key={item.id} className="flex items-center space-x-4">
                       <img
                           src={item.imageURL}
-                          alt={item.name}
+                          alt={item.itemName || item.name}
                           className="object-cover w-20 h-20 rounded"
                       />
                       <div className="flex-1">
-                        <p className="text-lg font-semibold">{item.name}</p>
+                        <p className="text-lg font-semibold">{item.itemName || item.name}</p>
                         <p className="text-gray-500">
-                          {item.quantity} x ${item.price.toFixed(2)}
+                          {item.quantity || item.itemQuantity} x ${(item.price || item.itemPrice ).toFixed(2)}
                         </p>
                       </div>
                       <p className="text-lg font-semibold">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        ${((item.quantity || item.itemQuantity) * (item.price || item.itemPrice )).toFixed(2)}
                       </p>
                     </div>
                 ))
@@ -168,14 +138,17 @@ const CartSidebar = ({ isOpen, onClose }) => {
               <span className="text-lg font-bold">${total.toFixed(2)}</span>
             </div>
             <div className="flex space-x-4">
-              <div className="w-full py-3 text-center text-white bg-purple-600 rounded-lg hover:bg-dark transition">
-                <Link to="/cart">
-                  <button>VIEW CART</button>
-                </Link>
-              </div>
-              <div className="w-full py-3 text-center text-white bg-purple-600 rounded-lg hover:bg-dark transition">
-                <button onClick={handleCheckout}>CHECK OUT</button>
-              </div>
+              <Link to="/cart" className="w-full">
+                <button className="w-full py-3 text-center text-white bg-purple-600 rounded-lg hover:bg-dark transition">
+                  VIEW CART
+                </button>
+              </Link>
+              <button
+                  onClick={handleCheckout}
+                  className="w-full py-3 text-center text-white bg-purple-600 rounded-lg hover:bg-dark transition"
+              >
+                CHECK OUT
+              </button>
             </div>
           </div>
         </div>

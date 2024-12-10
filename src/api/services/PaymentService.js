@@ -25,7 +25,7 @@ const PaymentService = {
     // Confirm payment
     confirmPayment: async (orderId, amount) => {
         try {
-            const response = await apiClient.post("/payments/confirm", null, {
+            const response = await apiClient.post("/payments/confirm",  {
                 params: { orderId, amount },
             });
             return response.data;

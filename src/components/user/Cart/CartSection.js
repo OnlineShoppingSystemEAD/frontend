@@ -16,7 +16,7 @@ const CartSection = () => {
   const initializeQuantities = (cart) => {
     const initialQuantities = {};
     cart.forEach((item) => {
-      initialQuantities[item.id] = item.itemQuantity || 1;
+      initialQuantities[item.id] = (item.itemQuantity || item.quantity) || 1;
     });
     setQuantities(initialQuantities);
   };
@@ -24,7 +24,7 @@ const CartSection = () => {
   const loadCartFromStorageOrBackend = useCallback(async () => {
     const savedCart = localStorage.getItem("cart");
     console.log("Saved Cart Data:", savedCart);
-    if (false) {
+    if (savedCart && savedCart.length > 0 ) {
       const cart = JSON.parse(savedCart);
       setCartItems(cart);
       initializeQuantities(cart);
@@ -70,7 +70,7 @@ const CartSection = () => {
 
     const updatedCart = cartItems.map((item) =>
         item.id === productId
-            ? { ...item, itemQuantity: Math.max((item.itemQuantity || 1) + quantityChange, 1) }
+            ? { ...item, itemQuantity: Math.max(((item.itemQuantity || item.quantity) || 1) + quantityChange, 1) }
             : item
     );
     setCartItems(updatedCart);
@@ -104,7 +104,7 @@ const CartSection = () => {
 
     try {
       const userId = await UserService.getUserId();
-      const response = await ShoppingCartService.deleteItemFromShoppingCart(productId, userId);
+      const response = await ShoppingCartService.deleteItemFromShoppingCart(productId);
       console.log(response)
       console.log(`Item ${productId} removed from the backend cart.`);
       const updatedCart = cartItems.filter((item) => item.id !== productId);
@@ -124,7 +124,7 @@ const CartSection = () => {
 
   const handleCheckout = async () => {
     const total = cartItems.reduce(
-        (sum, item) => sum + (item.itemPrice || 0) * (quantities[item.id] || 1),
+        (sum, item) => sum + (item.price || item.itemPrice || 0) * (quantities[item.id] || 1),
         0
     );
     const userId = UserService.getUserId();
@@ -140,17 +140,19 @@ const CartSection = () => {
         shippingAddress: `${user.data.addressLine1} ${user.data.addressLine2}`,
         status: "PENDING",
         totalAmount: total,
-        items: cartItems.map(({ id, itemQuantity, itemPrice, itemName }) => ({
+        items: cartItems.map(({ id, itemQuantity, price, itemName }) => ({
           productId: id,
           name: itemName,
           quantity: itemQuantity,
-          price: itemPrice,
+          price: price,
         })),
       };
 
       const response = await OrderService.createOrder(userId, orderData);
+      localStorage.setItem("cachedTotal", JSON.stringify(total));
       localStorage.setItem("orderDetails", JSON.stringify(response));
       localStorage.removeItem("cart");
+      console.log("Cart Removed")
       setCartItems([]);
       alert("Order placed successfully!");
       navigate("/checkout");
@@ -182,13 +184,13 @@ const CartSection = () => {
                     <td className="p-2 text-center border-b border-gray-400 flex items-center space-x-4">
                       <img
                           src={item.imageURL}
-                          alt={item.itemName}
+                          alt={item.itemName || item.name}
                           className="w-20 h-20 rounded-lg"
                       />
-                      <span>{item.itemName}</span>
+                      <span>{item.itemName || item.name}</span>
                     </td>
                     <td className="p-2 text-center border-b border-gray-400">
-                      ${item.itemPrice ? item.itemPrice.toFixed(2) : "0.00"}
+                      ${item.price || item.itemPrice ? (item.price || item.itemPrice).toFixed(2) : "0.00"}
                     </td>
                     <td className="p-2 text-center border-b border-gray-400">
                       <div className="flex items-center justify-center">
@@ -216,8 +218,8 @@ const CartSection = () => {
                       </div>
                     </td>
                     <td className="p-2 text-center border-b border-gray-400">
-                      ${item.itemPrice && quantities[item.id]
-                        ? (item.itemPrice * quantities[item.id]).toFixed(2)
+                      ${(item.price || item.itemPrice) && quantities[item.id]
+                        ? ((item.price || item.itemPrice) * quantities[item.id]).toFixed(2)
                         : "0.00"}
                     </td>
                     <td className="p-2 text-center border-b border-gray-400">
@@ -246,7 +248,7 @@ const CartSection = () => {
                 {cartItems
                     .reduce(
                         (total, item) =>
-                            total + (item.itemPrice || 0) * (quantities[item.id] || 1),
+                            total + (item.price || item.itemPrice || 0) * (quantities[item.id] || 1),
                         0
                     )
                     .toFixed(2)}

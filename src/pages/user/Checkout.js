@@ -60,7 +60,7 @@ const Checkout = () => {
     try {
       const orderDetails = JSON.parse(localStorage.getItem("orderDetails"));
       const cachedTotal = JSON.parse(localStorage.getItem("cachedTotal"));
-      console.log("Order Details:", orderDetails);
+      console.log("Order Id:", orderDetails.id);
       console.log("Cached Total:", cachedTotal);
 
       const response = await PaymentService.confirmPayment(orderDetails.id, cachedTotal);
