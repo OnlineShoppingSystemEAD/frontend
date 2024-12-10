@@ -82,7 +82,7 @@ const CategoryGrid = () => {
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-grow">
+            <main className="flex-grow flex justify-center">
                 <div className="category-grid">
                     {categories.map((category) => (
                         <div
@@ -90,8 +90,6 @@ const CategoryGrid = () => {
                             key={category.id}
                             onClick={() => handleCategoryClick(category)}
                         >
-                            <h1 className="category-name">{category.name}</h1>
-                            <img src={category.imageURL} alt={category.name} className="category-image" />
                             {category.id !== 0 && (
                                 <FaTrash
                                     className="icon-trash"
@@ -101,6 +99,12 @@ const CategoryGrid = () => {
                                     }}
                                 />
                             )}
+                            <h1 className="category-name">{category.name}</h1>
+                            <img 
+                                src={category.imageURL} 
+                                alt={category.name} 
+                                className="category-image" 
+                            />
                         </div>
                     ))}
                 </div>

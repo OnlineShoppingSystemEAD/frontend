@@ -1,11 +1,10 @@
-/* categoryGrid.css */
 .category-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     padding: 20px;
     margin: 0 auto;
-    max-width: 1000px; /* Adjust as needed */
+    max-width: 1200px;
 }
 
 .category-item {
@@ -13,38 +12,52 @@
     border-radius: 15px;
     overflow: hidden;
     text-align: center;
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.4);
     transition: transform 0.5s ease;
     cursor: pointer;
     padding: 10px;
+    
+    /* Fixed size and flex layout */
+    display: flex;
+    flex-direction: column;
+    height: 300px; /* Fixed height */
+    width: 250px;  /* Fixed width */
+    position: relative;
 }
 
-
 .category-item:hover {
-    transform: translateY(-15px);
-    background-color: rgba(91, 103, 182, 0.5);
+    background-color: rgba(104, 107, 127, 0.5);
 }
 
 .category-image {
-    width: 100%;
-    height: auto;
-    padding: 20px;
+    width: 200px;    /* Fixed width */
+    height: 200px;   /* Fixed height */
+    object-fit: cover; /* Ensures image covers the area without distortion */
+    align-self: center;
+    margin: 10px 0;
 }
 
 .category-name {
-    font-size: 3rem;
+    font-size: 1.5rem;  /* Significantly smaller text */
     font-weight: bold;
     margin: 10px 0;
     padding: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-/* styles.css */
+
 .icon-trash {
-    font-size: 1.5rem; /* Adjust the size */
-    color: white; /* Set the color */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1rem;
+    color: #333;
     cursor: pointer;
     transition: color 0.3s ease;
+    z-index: 10;
 }
 
 .icon-trash:hover {
-    color: #7A7A7A; /* Change color on hover */
+    color: purple;
 }
