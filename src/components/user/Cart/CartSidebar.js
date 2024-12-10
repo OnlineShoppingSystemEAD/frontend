@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { OrderService } from "../../../api/services/OrderService";
+import userService from "../../../api/services/UserService";
+import UserService from "../../../api/services/UserService";
 
-const CartSidebar = ({ isOpen, onClose }) => {
+const CartSidebar =  ({isOpen, onClose}) => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
@@ -63,31 +65,64 @@ const CartSidebar = ({ isOpen, onClose }) => {
   // Handle Checkout
   const handleCheckout = async () => {
     try {
-      localStorage.setItem("cachedTotal", total);
+      // Save the total amount to localStorage
+      localStorage.setItem("cachedTotal", JSON.stringify(total)); // Ensure total is saved as a string
 
+      // Get the user ID and profile
+      const userId = UserService.getUserId();
+      if (!userId) {
+        throw new Error("User ID is not available. Please log in.");
+      }
+
+      const userResponse = await UserService.getUserProfileById(userId);
+      if (!userResponse || !userResponse.data) {
+        throw new Error("Failed to retrieve user profile. Please try again.");
+      }
+
+      const user = userResponse.data;
+
+      // Construct the order data
       const orderData = {
+        userId: userId,
+        paymentId: null,
+        shippingAddress: `${user.addressLine1 || ""} ${user.addressLine2 || ""}`,
+        status: "PENDING",
+        totalAmount: total,
         items: cartItems.map(({ id, quantity, price, name }) => ({
           productId: id,
           name,
           quantity,
           price,
         })),
-        totalPrice: total,
       };
 
-      const response = await OrderService.createOrder(orderData);
-      localStorage.setItem("orderDetails", response.data);
+      // Create the order
+      const response = await OrderService.createOrder(userId, orderData);
+      console.log("Order response:", response);
 
+      // Save the order response to localStorage
+      localStorage.setItem("orderDetails", JSON.stringify(response));
+
+      // Verify the saved data
+      const savedOrderDetails = JSON.parse(localStorage.getItem("orderDetails"));
+      const savedTotal = JSON.parse(localStorage.getItem("cachedTotal"));
+      console.log("Saved Order Details:", savedOrderDetails);
+      console.log("Saved Total Details:", savedTotal);
+
+      // Clear the cart after successful order creation
       localStorage.removeItem("cart");
       setCartItems([]);
       setTotal(0);
+
       alert("Order placed successfully!");
       navigate("/checkout");
     } catch (error) {
-      console.error("Error placing order:", error.message);
-      alert("Failed to place order. Please try again.");
+      console.error("Error placing order:", error.message || error);
+      alert(error.message || "Failed to place order. Please try again.");
     }
   };
+
+
 
   return (
       <div

@@ -4,3 +4,5 @@ backend/.vscode/settings.json
 backend/order-management/.DS_Store
 ead.pem
 .idea/*
+node_modules
+.env
