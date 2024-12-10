@@ -108,10 +108,7 @@ const AccountDetails = ({file}) => {
 
   return (
       <div>
-        <h2 className="text-xl font-bold mb-4">Personal Details</h2>
-        <div className="mb-6 flex items-center">
-
-        </div>
+        <h2 className="text-xl font-bold mb-2">Personal Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-gray-600">First Name</label>
@@ -188,13 +185,16 @@ const AccountDetails = ({file}) => {
           </div>
         </div>
         <br/>
-        <button
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-dark transition w-auto"
-              onClick={handleUpdateProfile}
-              disabled={isUpdating}
-          >
-            {isUpdating ? 'Updating...' : 'Update Profile'}
-          </button>
+        <div className="flex justify-center mt-3">
+    {/* Center the button */}
+    <button
+      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-dark transition w-auto"
+      onClick={handleUpdateProfile}
+      disabled={isUpdating}
+    >
+      {isUpdating ? 'Updating...' : 'Update Profile'}
+    </button>
+  </div>
 
       </div>
   );

@@ -112,14 +112,14 @@ const Account = () => {
                 className="hidden"
                 onChange={handleImageChange}
             />
-            <h2 className="mt-4 text-2xl font-bold">
+            <h2 className="mt-2 text-2xl font-bold">
               {`${userData?.firstName || ''} ${userData?.lastName || ''}`}
             </h2>
             <span className="text-sm text-gray-500">⭐ 4.3</span>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex justify-center mt-6 space-x-4">
+          <div className="flex justify-center mt-4 space-x-4">
             {['general', 'payment', 'ongoing', 'completed'].map((tab) => (
                 <button
                     key={tab}
@@ -134,7 +134,7 @@ const Account = () => {
           </div>
 
           {/* Render Active Tab Content */}
-          <div className="mt-8">{renderContent()}</div>
+          <div className="mt-4">{renderContent()}</div>
         </div>
       </div>
   );
