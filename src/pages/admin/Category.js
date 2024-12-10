@@ -24,6 +24,60 @@ const Category = () => {
       setImage(e.target.files[0]);
     };
 
+    const handleSaveProduct = async (product) => {
+        try {
+
+    
+            // If it's a new product
+            if (product.isNew) {
+                const savedProduct = await ProductService.createProduct({
+                    categoryId: categoryId,
+                    name: product.name,
+                    price: product.price,
+                    quantity: product.quantity,
+                    status: product.status,
+                    images: product.images
+                });
+    
+                // Replace the temporary product with the saved product
+                setProducts(prevProducts => 
+                    prevProducts.map(p => 
+                        p.isNew ? savedProduct : p
+                    )
+                );
+            } else {
+                // Existing product update
+                const updatedProduct = await ProductService.updateProduct(product.id, {
+                    name: product.name,
+                    price: product.price,
+                    quantity: product.quantity,
+                    status: product.status,
+                    images: product.images
+                });
+    
+                // Update the product in the list
+                setProducts(prevProducts => 
+                    prevProducts.map(p => 
+                        p.id === product.id ? updatedProduct : p
+                    )
+                );
+            }
+    
+            // Reset editing state
+            setProducts(prevProducts => 
+                prevProducts.map(p => ({
+                    ...p,
+                    isEditing: false,
+                    isNew: false
+                }))
+            );
+    
+        } catch (error) {
+            console.error('Error saving product:', error);
+            alert('Failed to save product. Please try again.');
+        }
+    };
+
     // Fetch products based on categoryId
     useEffect(() => {
         const fetchProducts = async () => {
@@ -132,7 +186,7 @@ const Category = () => {
                             {products.map((product) => (
                                 <tr key={product.id}>
                                     <td>
-                                        {product.isNew ? (
+                                        {product.isNew || product.isEditing ? (
                                             <input
                                                 type="text"
                                                 value={product.id}
@@ -153,7 +207,7 @@ const Category = () => {
                                     </td>
 
                                     <td>
-                                        {product.isNew ? (
+                                        {product.isNew || product.isEditing ? (
                                             <input
                                                 type="text"
                                                 value={product.name}
@@ -173,7 +227,7 @@ const Category = () => {
                                         )}
                                     </td>
                                     <td>
-                                        {product.isNew ? (
+                                        {product.isNew || product.isEditing ? (
                                             <input
                                                 type="number"
                                                 value={product.quantity}
@@ -193,7 +247,7 @@ const Category = () => {
                                         )}
                                     </td>
                                     <td>
-                                        {product.isNew ? (
+                                        {product.isNew || product.isEditing ? (
                                             <input
                                                 type="number"
                                                 value={product.price}
@@ -248,32 +302,33 @@ const Category = () => {
                                     </td>
                                     <td>
                                         <div className="flex space-x-2 justify-center relative">
-                                            <button
-                                                onClick={() => {
-                                                    if (product.isNew) {
-                                                        setProducts((prevProducts) =>
-                                                            prevProducts.map((item) =>
-                                                                item.id === product.id
-                                                                    ? { ...item, isNew: false }
-                                                                    : item
-                                                            )
-                                                        );
-                                                    } else {
-                                                        alert(`Editing product: ${product.name}`);
-                                                    }
-                                                }}
-                                                className="bg-blue-400 text-white px-2 py-1 rounded hover:bg-blue-600 relative group"
-                                            >
-                                                {/* Conditional rendering for the icon */}
-                                                {product.isNew ? (
-                                                    <span className="text-orange-500 text-xl">✔️</span>
-                                                ) : (
-                                                    <span className="text-white text-xl">✏️</span>
-                                                )}
-                                                <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {product.isNew ? 'Save' : 'Edit'}
-                                                </span>
-                                            </button>
+                                        <button
+                                        onClick={() => {
+                                            if (product.isNew || product.isEditing) {
+                                                // If in editing mode, try to save
+                                                handleSaveProduct(product);
+                                            } else {
+                                                // If not in editing mode, enter editing mode
+                                                setProducts((prevProducts) =>
+                                                    prevProducts.map((item) =>
+                                                        item.id === product.id
+                                                            ? { ...item, isEditing: true }
+                                                            : item
+                                                    )
+                                                );
+                                            }
+                                        }}
+                                        className="bg-blue-400 text-white px-2 py-1 rounded hover:bg-blue-600 relative group"
+                                    >
+                                        {product.isNew || product.isEditing ? '✔️' : '✏️'}
+                                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                                                        bg-black text-white text-xs rounded px-2 py-1 
+                                                        opacity-0 group-hover:opacity-100 
+                                                        transition-opacity duration-300 
+                                                        whitespace-nowrap z-10">
+                                                        {product.isNew || product.isEditing ? 'Save' : 'Edit'}
+                                        </span>
+                                    </button>
 
                                             <button
                                                 onClick={() =>
