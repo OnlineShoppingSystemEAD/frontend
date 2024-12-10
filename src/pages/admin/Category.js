@@ -11,6 +11,19 @@ const Category = () => {
     const [loading, setLoading] = useState(true); // Loading state
     const [error, setError] = useState(null); // Error state
 
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState("Category Name");
+    const [description, setDescription] = useState("Category Description");
+    const [image, setImage] = useState(null);
+  
+    const handleEditToggle = () => {
+      setIsEditing((prev) => !prev);
+    };
+  
+    const handleImageChange = (e) => {
+      setImage(e.target.files[0]);
+    };
+
     // Fetch products based on categoryId
     useEffect(() => {
         const fetchProducts = async () => {
@@ -48,7 +61,43 @@ const Category = () => {
             <main className="flex-grow">
                 <div className="category-items-container">
                     <h1>Products in Category {categoryId}</h1>
-                    <button
+                    <div className="flex items-center space-x-4 p-4">
+                        {/* Name Input */}
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            disabled={!isEditing}
+                            className={`border p-2 rounded bg-white`}
+                        />
+
+                        {/* Image Upload Input */}
+                        <input
+                            type="file"
+                            onChange={handleImageChange}
+                            disabled={!isEditing}
+                            className={`border p-2 rounded bg-white`}
+                        />
+
+                        {/* Description Input */}
+                        <input
+                            type="text"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            disabled={!isEditing}
+                            className={`border p-2 rounded bg-white`}
+                        />
+
+                        {/* Edit/Save Button */}
+                        <button
+                            onClick={handleEditToggle}
+                            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
+                        >
+                            {isEditing ? "✔️ Save" : "✏️ Edit"}
+                        </button>
+                        </div>
+
+                        <button
                         onClick={() =>
                             setProducts((prevProducts) => [
                                 ...prevProducts,
