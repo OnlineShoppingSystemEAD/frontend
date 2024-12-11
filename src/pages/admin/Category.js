@@ -7,8 +7,8 @@ import ProductService from '../../api/services/ProductService';
 import CategoryService from '../../api/services/ProductService';
 import userService from "../../api/services/UserService";
 
-const Category = () => {
-    const { categoryId } = useParams(); // Retrieve categoryId from the URL
+const Category =  () => {
+    const {categoryId} = useParams(); // Retrieve categoryId from the URL
     const [products, setProducts] = useState([]); // Products state
     const [loading, setLoading] = useState(true); // Loading state
     const [error, setError] = useState(null); // Error state
@@ -26,7 +26,7 @@ const Category = () => {
                 if (categoryId === "0") {
                     // Create category
                     response = await CategoryService.createCategory(
-                        { name, description },
+                        {name, description},
                         image,
                         userId,
                         "ADMIN"
@@ -35,7 +35,7 @@ const Category = () => {
                     // Update category
                     response = await CategoryService.updateCategory(
                         categoryId,
-                        { name, description },
+                        {name, description},
                         image,
                         userId,
                         "ADMIN"
@@ -55,16 +55,43 @@ const Category = () => {
         setImage(e.target.files[0]);
     };
 
+    const convertFileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    };
+
     const handleSaveProduct = async (product) => {
         try {
             if (!product) {
                 throw new Error("Product object is undefined");
             }
 
-            // Ensure images is always an array
-            const images = Array.isArray(product.images) ? product.images : [];
-            images.forEach((image) => {
-                console.log("Processing image:", image);
+            console.log("Product object:", product);
+
+            // Ensure `status` has a valid default value
+            const status = product.status || "Available";
+
+            // Validate and prepare images
+            const images = Array.isArray(product.images) && product.images.length > 0 ? product.images : [];
+            console.log("Images before processing:", images);
+
+            const processedImages = await Promise.all(
+                images.map((file) => convertFileToBase64(file))
+            );
+            console.log("Processed images (base64):", processedImages);
+
+            // Log parameters
+            console.log("Params passed to createItem:", {
+                categoryId,
+                name: product.name,
+                price: product.price,
+                quantity: product.quantity,
+                status,
+                images: processedImages,
             });
 
             if (product.isNew) {
@@ -73,8 +100,8 @@ const Category = () => {
                     name: product.name,
                     price: product.price,
                     quantity: product.quantity,
-                    status: product.status,
-                    images,
+                    status,
+                    images: processedImages,
                 });
                 setProducts((prevProducts) =>
                     prevProducts.map((p) => (p.isNew ? savedProduct : p))
@@ -84,8 +111,8 @@ const Category = () => {
                     name: product.name,
                     price: product.price,
                     quantity: product.quantity,
-                    status: product.status,
-                    images,
+                    status,
+                    images: processedImages,
                 });
                 setProducts((prevProducts) =>
                     prevProducts.map((p) => (p.id === product.id ? updatedProduct : p))
@@ -104,7 +131,6 @@ const Category = () => {
             alert("Failed to save product. Please try again.");
         }
     };
-
 
     const handleDeleteProduct = async (productId) => {
         try {
@@ -149,7 +175,7 @@ const Category = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <Navbar />
+            <Navbar/>
             <main className="flex-grow">
                 <div className="category-items-container">
                     <h1>Products in Category {categoryId}</h1>
@@ -231,7 +257,7 @@ const Category = () => {
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, id: e.target.value }
+                                                            ? {...item, id: e.target.value}
                                                             : item
                                                     )
                                                 )
@@ -252,7 +278,7 @@ const Category = () => {
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, name: e.target.value }
+                                                            ? {...item, name: e.target.value}
                                                             : item
                                                     )
                                                 )
@@ -272,7 +298,7 @@ const Category = () => {
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, quantity: e.target.value }
+                                                            ? {...item, quantity: e.target.value}
                                                             : item
                                                     )
                                                 )
@@ -292,7 +318,7 @@ const Category = () => {
                                                 setProducts((prevProducts) =>
                                                     prevProducts.map((item) =>
                                                         item.id === product.id
-                                                            ? { ...item, price: e.target.value }
+                                                            ? {...item, price: e.target.value}
                                                             : item
                                                     )
                                                 )
@@ -310,7 +336,7 @@ const Category = () => {
                                             setProducts((prevProducts) =>
                                                 prevProducts.map((item) =>
                                                     item.id === product.id
-                                                        ? { ...item, status: e.target.value }
+                                                        ? {...item, status: e.target.value}
                                                         : item
                                                 )
                                             )
@@ -330,7 +356,7 @@ const Category = () => {
                                             setProducts((prevProducts) =>
                                                 prevProducts.map((item) =>
                                                     item.id === product.id
-                                                        ? { ...item, images: files }
+                                                        ? {...item, images: files}
                                                         : item
                                                 )
                                             );
@@ -354,7 +380,7 @@ const Category = () => {
                                                     setProducts((prevProducts) =>
                                                         prevProducts.map((item) =>
                                                             item.id === product.id
-                                                                ? { ...item, isEditing: true }
+                                                                ? {...item, isEditing: true}
                                                                 : item
                                                         )
                                                     );
@@ -379,7 +405,7 @@ const Category = () => {
                     </table>
                 </div>
             </main>
-            <Footer />
+            <Footer/>
         </div>
     );
 };

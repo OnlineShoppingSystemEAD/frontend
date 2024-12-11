@@ -20,10 +20,13 @@ const CategoryGrid = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
+                console.log("Fetching categories...");
                 const response = await ProductService.getCategories();
-                let data = response.data || []; // Ensure data is initialized as an array
+                console.log("API Response:", response);
 
-                // Add "NEW" object to the list
+                let data = response.data || [];
+                console.log("Category Data:", data);
+
                 const add = {
                     id: 0,
                     name: "NEW",
@@ -31,11 +34,10 @@ const CategoryGrid = () => {
                     imageURL: "https://media.istockphoto.com/id/688550958/vector/black-plus-sign-positive-symbol.jpg?s=612x612&w=0&k=20&c=0tymWBTSEqsnYYXWeWmJPxMotTGUwaGMGs6BMJvr7X4="
                 };
 
-                // Append "NEW" to the categories list
                 data = [...data, add];
                 setCategories(data);
             } catch (error) {
-                console.error("Error loading categories:", error.message);
+                console.error("Error loading categories:", error.message, error.response?.data);
             } finally {
                 setLoading(false);
             }

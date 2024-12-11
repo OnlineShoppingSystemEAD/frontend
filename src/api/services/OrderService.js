@@ -112,24 +112,24 @@ const OrderService = {
     },
 
     // Update order status
-    updateOrderStatus: async (orderId, orderData) => {
+    updateOrderStatus: async (orderId, updatedStatus) => {
         try {
-            // Construct the payload object
+            // Correct payload structure
             const payload = {
-                orderId,
-                orderData, // assuming orderData has a property orderStatus
+                orderId, // Include the orderId explicitly in the request body
+                orderStatus: updatedStatus // Ensure field name matches backend's DTO
             };
 
+            // Call API with updated payload
             const response = await axios.put(`${API_BASE_URL}/api/order/${orderId}`, payload, {
                 headers: getDefaultHeaders(),
             });
-            return response.data;
+            return response;
         } catch (error) {
             console.error("Error updating order status:", error.response?.data || error.message);
             throw error;
         }
     },
-
 
     // Delete an order
     deleteOrder: async (orderId) => {

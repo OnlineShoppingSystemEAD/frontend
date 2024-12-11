@@ -79,9 +79,9 @@ const ItemService = {
             const response = await axios.get(`${API_BASE_URL}/api/categories`, {
                 headers: getDefaultHeaders(),
             });
-            return response.data?.data || []; // Adjust based on ResponseDTO structure
+            return response.data || []; // Adjust based on ResponseDTO structure
         } catch (error) {
-            console.error("Error fetching categories:", error.response?.data || error.message);
+            console.error("Error fetching categories:", error.response || error.message);
             throw error;
         }
     },

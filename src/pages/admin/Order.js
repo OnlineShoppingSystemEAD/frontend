@@ -63,13 +63,15 @@ const Order = () => {
 
     const handleSaveClick = async () => {
         try {
-            await OrderService.updateOrderStatus(orderId, { orderStatus: updatedStatus });
+            const response = await OrderService.updateOrderStatus(orderId, updatedStatus);
+            console.log(response);
             setOrder(prev => ({ ...prev, orderStatus: updatedStatus })); // Update local state
             setIsEditMode(false); // Exit edit mode
         } catch (error) {
-            console.error("Error updating order status:", error);
+            console.error("Error updating order status:", error.response?.data || error.message);
         }
     };
+
 
     if (isLoading) {
         return <div>Loading...</div>;
