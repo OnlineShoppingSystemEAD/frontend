@@ -49,31 +49,45 @@ const ItemService = {
     // Create a new item (Admin Only)
     createItem: async (itemData, images) => {
         try {
+            console.log("Debug: Starting createItem method.");
+            console.log("Debug: Received itemData:", itemData);
+            console.log("Debug: Received images:", images);
+
             // Create a FormData object
             const formData = new FormData();
 
             // Append the item data as a JSON string
-            formData.append("item", new Blob([JSON.stringify(itemData)], { type: "application/json" }));
+            const itemBlob = new Blob([JSON.stringify(itemData)], { type: "application/json" });
+            formData.append("item", itemBlob);
+            console.log("Debug: Appended item data to FormData:", itemData);
 
             // Append each image file to the form data
             images.forEach((image, index) => {
                 formData.append("images", image);
+                console.log(`Debug: Appended image ${index + 1} to FormData:`, image);
             });
 
+            // Log FormData keys and values (if needed for debugging)
+            console.log("Debug: FormData keys:", [...formData.keys()]);
+            console.log("Debug: FormData values:", [...formData.entries()]);
+
             // Make the POST request with multipart/form-data
-            const response = await axios.post(`${API_BASE_URL}/admin/items`, formData, {
+            console.log("Debug: Making POST request to:", `${API_BASE_URL}/api/items`);
+            const response = await axios.post(`${API_BASE_URL}/api/items`, formData, {
                 headers: {
                     ...getDefaultHeaders(),
                     "Content-Type": "multipart/form-data", // Ensure Content-Type is set for FormData
                 },
             });
 
+            console.log("Debug: Received response:", response.data);
             return response.data;
         } catch (error) {
             console.error("Error creating item:", error.response?.data || error.message);
             throw error;
         }
     },
+
     getCategories: async () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/api/categories`, {

@@ -93,27 +93,23 @@ const Category =  () => {
                 status,
                 images: processedImages,
             });
+            const itemData = {
+                categoryId,
+                name: product.name,
+                price: product.price,
+                quantity: product.quantity,
+                status,
+            };
 
             if (product.isNew) {
-                const savedProduct = await ProductService.createItem({
-                    categoryId,
-                    name: product.name,
-                    price: product.price,
-                    quantity: product.quantity,
-                    status,
-                    images: processedImages,
-                });
+
+                const savedProduct = await ProductService.createItem(itemData, images);
                 setProducts((prevProducts) =>
                     prevProducts.map((p) => (p.isNew ? savedProduct : p))
                 );
+
             } else {
-                const updatedProduct = await ProductService.updateItem(product.id, {
-                    name: product.name,
-                    price: product.price,
-                    quantity: product.quantity,
-                    status,
-                    images: processedImages,
-                });
+                const updatedProduct = await ProductService.updateItem(itemData, images);
                 setProducts((prevProducts) =>
                     prevProducts.map((p) => (p.id === product.id ? updatedProduct : p))
                 );
@@ -134,7 +130,7 @@ const Category =  () => {
 
     const handleDeleteProduct = async (productId) => {
         try {
-            await ProductService.deleteProduct(productId);
+            await ProductService.deleteItem(productId);
             setProducts((prevProducts) =>
                 prevProducts.filter((product) => product.id !== productId)
             );
