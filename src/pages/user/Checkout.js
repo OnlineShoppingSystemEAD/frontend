@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/user/Header";
-import PaymentService from "../../api/services/Paymentervice"; // Adjust the path to your PaymentService file
+import PaymentService from "../../api/services/PaymentService";
+import UserService from "../../api/services/UserService";
 
 const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -14,173 +15,181 @@ const Checkout = () => {
     state: "",
     zipCode: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setOrderDetails((prevDetails) => ({
-  //     ...prevDetails,
-  //     [name]: value,
-  //   }));
-  // };
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const userId = UserService.getUserId();
+        const response = await UserService.getUserProfileById(userId);
 
-  const handlePaymentChange = (e) => {
-    setPaymentMethod(e.target.value);
+        if (response?.data) {
+          const { firstName, lastName, email, addressLine1, city, state, postalCode } = response.data;
+          setOrderDetails({
+            firstName: firstName || "",
+            lastName: lastName || "",
+            email: email || "",
+            streetAddress: addressLine1 || "",
+            city: city || "",
+            state: state || "",
+            zipCode: postalCode || "",
+          });
+        } else {
+          throw new Error("User details not found");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load user details. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setOrderDetails((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCheckout = async () => {
-    if (!paymentMethod) {
-      alert("Please select a payment method.");
-      return;
-    }
-
     try {
+      const orderDetails = JSON.parse(localStorage.getItem("orderDetails"));
+      const cachedTotal = JSON.parse(localStorage.getItem("cachedTotal"));
+      console.log("Order Details:", orderDetails);
+      console.log("Cached Total:", cachedTotal);
 
-      const total = parseFloat(localStorage.getItem("cachedTotal"));
-
-      const order = parseFloat(localStorage.getItem("orderDetails"));
-      // API call to confirm payment
-      const response = await PaymentService.confirmPayment( order, total);
-
-      console.log("Payment confirmed successfully:", response);
+      const response = await PaymentService.confirmPayment(orderDetails.id, cachedTotal);
+      console.log(response);
       alert("Payment successful! Redirecting to home...");
-
-      // Clear the cart after successful order
-      localStorage.removeItem("cart");
-
-      alert("Order placed successfully!");
+      localStorage.removeItem("orderDetails");
+      localStorage.removeItem("cachedTotal");
       navigate("/");
     } catch (error) {
-      console.error("Error during payment confirmation:", error);
-      alert("Failed to confirm payment. Please try again.");
+      console.error("Checkout failed:", error);
+      alert("Failed to place the order. Please try again.");
     }
   };
 
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-screen">
+          <p className="text-2xl text-purple-500 font-medium">Loading your details...</p>
+        </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
   return (
       <div className="min-h-screen">
-        {/* Import and display Navbar */}
         <Header />
-
-        <div className="pl-[8cm] pr-[8cm] pt-10">
-          {/* Top Section: Checkout heading on the left and buttons on the right */}
+        <div className="px-32 pt-10">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-semibold">Checkout</h1>
-            <div className="mr-2 space-x-8">
+            <div className="space-x-4">
               <button
-                  className="w-[3cm] p-2 text-xl bg-black text-white hover:text-white rounded-xl transform transition-transform hover:scale-105 hover:bg-gray-700"
+                  className="px-4 py-2 text-white bg-black rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105"
                   onClick={() => navigate(-1)}
               >
                 Back
               </button>
               <button
-                  className="w-[3cm] p-2 text-xl text-white bg-blue-700 rounded-xl transform transition-transform hover:scale-105 hover:bg-blue-600"
+                  className="px-4 py-2 text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
                   onClick={handleCheckout}
               >
                 Pay
               </button>
             </div>
           </div>
-
-          {/* Form Section */}
           <form className="space-y-8">
-            {/* Personal Details Section */}
-            <div>
-              <h2 className="mb-4 text-xl font-semibold text-gray-500">
-                Personal Details
-              </h2>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-2 gap-20">
-                  <input
-                      type="text"
-                      placeholder="First Name"
-                      name="firstName"
-                      value={orderDetails.firstName}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                  <input
-                      type="text"
-                      placeholder="Last Name"
-                      name="lastName"
-                      value={orderDetails.lastName}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-20 mt-5">
-                  <input
-                      type="email"
-                      placeholder="Email Address"
-                      name="email"
-                      value={orderDetails.email}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                </div>
+            <section>
+              <h2 className="text-xl font-semibold text-gray-500">Personal Details</h2>
+              <div className="grid grid-cols-2 gap-6">
+                <input
+                    type="text"
+                    placeholder="First Name"
+                    name="firstName"
+                    value={orderDetails.firstName}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
+                <input
+                    type="text"
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={orderDetails.lastName}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
+                <input
+                    type="email"
+                    placeholder="Email Address"
+                    name="email"
+                    value={orderDetails.email}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg col-span-2"
+                />
               </div>
-            </div>
+            </section>
 
-            {/* Billing Address Section */}
-            <div>
-              <h2 className="mb-4 text-xl font-semibold">Billing Address</h2>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-2 gap-20">
-                  <input
-                      type="text"
-                      placeholder="Street Address"
-                      name="streetAddress"
-                      value={orderDetails.streetAddress}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                  <input
-                      type="text"
-                      placeholder="City"
-                      name="city"
-                      value={orderDetails.city}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-20 mt-4">
-                  <input
-                      type="text"
-                      placeholder="State"
-                      name="state"
-                      value={orderDetails.state}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                  <input
-                      type="text"
-                      placeholder="Zip Code"
-                      name="zipCode"
-                      value={orderDetails.zipCode}
-                      // onChange={handleInputChange}
-                      className="p-2 bg-gray-100 border border-gray-600 rounded-2xl"
-                  />
-                </div>
+            <section>
+              <h2 className="text-xl font-semibold text-gray-500">Billing Address</h2>
+              <div className="grid grid-cols-2 gap-6">
+                <input
+                    type="text"
+                    placeholder="Street Address"
+                    name="streetAddress"
+                    value={orderDetails.streetAddress}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
+                <input
+                    type="text"
+                    placeholder="City"
+                    name="city"
+                    value={orderDetails.city}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
+                <input
+                    type="text"
+                    placeholder="State"
+                    name="state"
+                    value={orderDetails.state}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
+                <input
+                    type="text"
+                    placeholder="Zip Code"
+                    name="zipCode"
+                    value={orderDetails.zipCode}
+                    onChange={handleInputChange}
+                    className="p-2 bg-gray-100 border rounded-lg"
+                />
               </div>
-            </div>
+            </section>
 
-            {/* Payment Method Section */}
-            <div className="flex flex-col items-center justify-between md:flex-row">
-              <div className="w-full md:w-1/2">
-                <h2 className="mb-4 text-xl font-semibold ">Payment Method</h2>
-                <select
-                    className="w-[10cm] border border-gray-300 rounded-2xl"
-                    value={paymentMethod}
-                    onChange={handlePaymentChange}
-                >
-                  <option value="">Select Payment Method</option>
-                  <option value="credit">Credit Card</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="bank">Bank Transfer</option>
-                </select>
-              </div>
-            </div>
+            <section>
+              <h2 className="text-xl font-semibold text-gray-500">Payment Method</h2>
+              <select
+                  className="w-full p-2 border bg-gray-100 rounded-lg"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="">Select Payment Method</option>
+                <option value="credit">Credit Card</option>
+                <option value="paypal">PayPal</option>
+                <option value="bank">Bank Transfer</option>
+              </select>
+            </section>
           </form>
         </div>
       </div>

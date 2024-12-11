@@ -23,7 +23,11 @@ const TileGrid = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-6 text-center">Loading categories...</div>;
+    return (
+    <div className="flex justify-center items-center h-screen">
+    <p className="text-2xl text-purple-500 font-medium">Loading categories...</p>
+    </div>
+);
   }
 
   if (!Array.isArray(categories) || categories.length === 0) {

@@ -1,217 +1,162 @@
-// OrderDetails.js
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../../styles/orderDetails.css';
 import Navbar from "../../components/admin/Navbar";
 import Footer from "../../components/user/Footer";
+import { OrderItemsService, OrderService } from '../../api/services/OrderService';
+import UserService from "../../api/services/UserService";
 
 const Order = () => {
-    const location = useLocation();
+    const { orderId } = useParams(); // Retrieve orderId from the URL
     const navigate = useNavigate();
-    const order = location.state?.order;
 
-    const [isEditMode, setEditMode] = useState(false);
-    const [updatedOrder, setUpdatedOrder] = useState({
-        ...order,
-        deliveryPerson: Array.isArray(order?.deliveryPerson) ? order.deliveryPerson : [], // Ensure deliveryPerson is an array
-    });
-    const [showAssignSlider, setShowAssignSlider] = useState(false);
+    const [order, setOrder] = useState(null); // State to store the order details
+    const [products, setProducts] = useState([]); // State to store products
+    const [isLoading, setIsLoading] = useState(true); // State to manage loading state
+    const [isEditMode, setIsEditMode] = useState(false); // State for edit mode
+    const [updatedStatus, setUpdatedStatus] = useState(''); // State for editable status
 
-    const deliveryPeople = ["Name 1", "Name 2", "Name 3", "Name 4"];
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            try {
+                const fetchedOrder = await OrderItemsService.getProductsByOrder(orderId);
 
-    if (!order) {
-        navigate('/');
-        return null;
-    }
+                if (fetchedOrder && fetchedOrder.length > 0) {
+                    const orderDetails = fetchedOrder[0].order;
+                    const userId = orderDetails.userId;
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setUpdatedOrder({ ...updatedOrder, [name]: value });
+                    // Fetch user profile
+                    const userResponse = await UserService.getUserProfileById(userId, userId, "USER");
+                    const userData = userResponse.data;
+
+                    // Combine user and order data
+                    const combinedOrderDetails = {
+                        ...orderDetails,
+                        customerName: `${userData.firstName} ${userData.lastName}`,
+                        email: userData.email,
+                        billingAddress: `${orderDetails.shippingAddress}`,
+                    };
+
+                    setOrder(combinedOrderDetails);
+                    setProducts(
+                        fetchedOrder.map(item => ({
+                            itemName: item.itemName || "N/A",
+                            quantity: item.quantity || 0,
+                            itemPrice: item.itemPrice || 0,
+                        }))
+                    );
+                    setUpdatedStatus(orderDetails.status || "N/A");
+                }
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Error fetching order details:", error);
+                navigate('/'); // Redirect to the home page in case of an error
+            }
+        };
+
+        fetchOrderDetails();
+    }, [orderId, navigate]);
+
+    const handleStatusChange = (e) => {
+        setUpdatedStatus(e.target.value);
     };
 
-    const handleAssignClick = () => {
-        setShowAssignSlider(!showAssignSlider);
-    };
-
-    const handleAssignDeliveryPerson = (person) => {
-        // Add the person to the deliveryPerson list if not already assigned
-        if (!updatedOrder.deliveryPerson.includes(person)) {
-            setUpdatedOrder({
-                ...updatedOrder,
-                deliveryPerson: [...updatedOrder.deliveryPerson, person],
-            });
+    const handleSaveClick = async () => {
+        try {
+            await OrderService.updateOrderStatus(orderId, { status: updatedStatus });
+            setOrder(prev => ({ ...prev, status: updatedStatus })); // Update local state
+            setIsEditMode(false); // Exit edit mode
+        } catch (error) {
+            console.error("Error updating order status:", error);
         }
-        setShowAssignSlider(false); // Close the slider after selecting a person
     };
 
-    const handleUpdateClick = () => {
-        setEditMode(true);
-    };
-
-    const handleSaveClick = () => {
-        // Here you would typically send the updated order data to the server
-        console.log("Updated order data:", updatedOrder);
-        setEditMode(false);
-    };
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-grow">
                 <div className="order-details-container">
-                    <div className="order-header">
-                        <div className="order-image">
-                            <img
-                                src="https://objectstorage.ap-mumbai-1.oraclecloud.com/n/softlogicbicloud/b/cdn/o/category-images/60ab26835e322.png"
-                                alt="Product"
-                            />
-                        </div>
-                        <div className="order-summary">
-                            <h2>Order Number - {updatedOrder.orderNumber}</h2>
-                            <p>Product Name: {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="productName"
-                                    value={updatedOrder.productName}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                updatedOrder.productName
-                            )}</p>
-                            <p>Quantity: {isEditMode ? (
-                                <input
-                                    type="number"
-                                    name="quantity"
-                                    value={updatedOrder.quantity}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                updatedOrder.quantity
-                            )}</p>
-                        </div>
-                        <div className="order-actions">
-                            {isEditMode ? (
-                                <button className="update-button" onClick={handleSaveClick}>Save</button>
-                            ) : (
-                                <button className="update-button" onClick={handleUpdateClick}>Update</button>
-                            )}
-                            <button className="assign-button" onClick={handleAssignClick}>
-                                Assign Delivery Person
-                            </button>
-                        </div>
-                    </div>
-
+                    <h2>Order Number - {orderId}</h2>
                     <div className="order-details">
                         <div className="detail-row">
-                            <strong>Customer Name:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="customerName"
-                                    value={updatedOrder.customerName}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.customerName}</span>
-                            )}
+                            <strong>Customer Name:</strong> {order.customerName || "N/A"}
                         </div>
                         <div className="detail-row">
-                            <strong>Email Address:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={updatedOrder.email}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.email}</span>
-                            )}
+                            <strong>Email Address:</strong> {order.email || "N/A"}
                         </div>
                         <div className="detail-row">
-                            <strong>Billing Address:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="billingAddress"
-                                    value={updatedOrder.billingAddress}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.billingAddress}</span>
-                            )}
+                            <strong>Billing Address:</strong> {order.billingAddress || "N/A"}
                         </div>
                         <div className="detail-row">
-                            <strong>Total Price:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="price"
-                                    value={updatedOrder.price}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.price}</span>
-                            )}
+                            <strong>Total Price:</strong> {order.totalAmount || "N/A"}
                         </div>
                         <div className="detail-row">
-                            <strong>Delivery Person:</strong>
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    name="deliveryPerson"
-                                    value={updatedOrder.deliveryPerson || ""}
-                                    onChange={handleInputChange}
-                                />
-                            ) : (
-                                <span>{updatedOrder.deliveryPerson || "None"}</span>
-                            )}
-                        </div>
-
-                        {/* Slider for Assigning Delivery Person */}
-                        {showAssignSlider && (
-                            <div className="assign-slider">
-                                {deliveryPeople.map((person, index) => (
-                                    <div
-                                        key={index}
-                                        className="slider-item"
-                                        onClick={() => handleAssignDeliveryPerson(person)}
-                                    >
-                                        {person}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="detail-row">
-                            <strong>Status:</strong>
-                            {isEditMode ? (
+                            <strong>Status:</strong> {isEditMode ? (
+                            order.status === "PAID" ? (
                                 <select
-                                    name="status"
-                                    value={updatedOrder.status}
-                                    onChange={handleInputChange}
-                                    className="status-dropdown"
+                                    value={updatedStatus}
+                                    onChange={handleStatusChange}
                                 >
-                                    <option value="Paid">Paid</option>
-                                    <option value="On Delivery">On Delivery</option>
-                                    <option value="Packing">Packing</option>
-                                    <option value="Completed">Completed</option>
+                                    <option value="PAID">PAID</option>
+                                    <option value="DELIVERY">DELIVERY</option>
+                                    <option value="COMPLETED">COMPLETED</option>
                                 </select>
                             ) : (
-                                <span>{updatedOrder.status}</span>
-                            )}
+                                <input
+                                    type="text"
+                                    value={updatedStatus}
+                                    onChange={handleStatusChange}
+                                />
+                            )
+                        ) : (
+                            order.status || "N/A"
+                        )}
                         </div>
                     </div>
 
-                    <div className="footer-actions">
-                    <button className="back-button" onClick={() => navigate(-1)}>Back</button>
+                    <div className="order-products">
+                        <h3 className="text-lg font-bold mb-4">Products</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {products.map((product, index) => (
+                                <div
+                                    key={index}
+                                    className="product-item bg-white shadow-lg rounded-lg p-4 border border-gray-200 hover:shadow-xl"
+                                >
+                                    <p className="text-sm font-medium mb-2">
+                                        <strong>Item Name:</strong> {product.itemName}
+                                    </p>
+                                    <p className="text-sm mb-2">
+                                        <strong>Quantity:</strong> {product.quantity}
+                                    </p>
+                                    <p className="text-sm mb-2">
+                                        <strong>Price:</strong> ${product.itemPrice.toFixed(2)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+
+                    <div className="order-actions">
+                        {isEditMode ? (
+                            <button className="save-button" onClick={handleSaveClick}>
+                                Save Status
+                            </button>
+                        ) : (
+                            <button className="edit-button" onClick={() => setIsEditMode(true)}>
+                                Edit Status
+                            </button>
+                        )}
+                    </div>
                 </div>
+            </main>
+            <Footer />
         </div>
-</main>
-    <Footer/>
-</div>
-)
-    ;
+    );
 };
 
 export default Order;

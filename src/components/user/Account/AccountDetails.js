@@ -57,9 +57,15 @@ const AccountDetails = ({file}) => {
     try {
       const userId = userService.getUserId();
       const formData = new FormData();
+      const role = userService.getUserRole();
       formData.append('userProfileDetails', JSON.stringify(accountData));
-      formData.append('profilePicture', file);
-      const response = await userService.updateUserProfile(userId, formData);
+      if (file) {
+        formData.append('profilePicture', file); // Append the file
+      }
+      else{
+        throw new Error(file.type +'Invalid File Type');
+      }
+      const response = await userService.updateUserProfile(userId, userId, role , formData);
 
       if (response) {
         const updatedData = {
@@ -92,9 +98,9 @@ const AccountDetails = ({file}) => {
 
   if (isLoading) {
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100vh', textAlign: 'center' }}>
-          <p style={{ marginTop: '20px', fontSize: '18px', color: '#555' }}>Loading...</p>
-        </div>
+<div className="flex justify-center items-center h-screen">
+    <p className="text-2xl text-purple-500 font-medium">Loading your details...</p>
+</div>
     );
   }
 
@@ -108,15 +114,7 @@ const AccountDetails = ({file}) => {
 
   return (
       <div>
-        <h2 className="text-xl font-bold mb-4">Personal Details</h2>
-        <div className="mb-6 flex items-center">
-          {/*<img*/}
-          {/*    src={profilePicturePreview}*/}
-          {/*    alt="Profile"*/}
-          {/*    className="w-24 h-24 rounded-full border border-gray-300 mr-4"*/}
-          {/*/>*/}
-
-        </div>
+        <h2 className="text-xl font-bold mb-2">Personal Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-gray-600">First Name</label>
@@ -191,14 +189,18 @@ const AccountDetails = ({file}) => {
             />
 
           </div>
-          <button
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-dark transition"
-              onClick={handleUpdateProfile}
-              disabled={isUpdating}
-          >
-            {isUpdating ? 'Updating...' : 'Update Profile'}
-          </button>
         </div>
+        <br/>
+        <div className="flex justify-center mt-3">
+    {/* Center the button */}
+    <button
+      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-dark transition w-auto"
+      onClick={handleUpdateProfile}
+      disabled={isUpdating}
+    >
+      {isUpdating ? 'Updating...' : 'Update Profile'}
+    </button>
+  </div>
 
       </div>
   );

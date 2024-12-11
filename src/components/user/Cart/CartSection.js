@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { ShoppingCartService } from "../../../api/services/OrderService"; // Adjust the path
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { OrderService } from "../../../api/services/OrderService";
+import UserService from "../../../api/services/UserService";
 
 const CartSection = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -7,192 +9,216 @@ const CartSection = () => {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [state, setState] = useState("");
-
-  // List of countries
+  const navigate = useNavigate();
   const countries = ["United States", "Canada", "United Kingdom", "Australia", "India"];
 
+  const loadCartFromStorage = useCallback(() => {
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      const cart = JSON.parse(savedCart);
+      setCartItems(cart);
+
+      const initialQuantities = {};
+      cart.forEach((item) => {
+        initialQuantities[item.id] = item.quantity;
+      });
+      setQuantities(initialQuantities);
+    } else {
+      setCartItems([]);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadCartData = async () => {
-      try {
-        const decodedTokenString = localStorage.getItem("decodedToken");
-        if (!decodedTokenString) {
-          console.error("No decoded token found in localStorage.");
-          return;
-        }
+    loadCartFromStorage();
 
-        const decodedToken = JSON.parse(decodedTokenString);
-        if (!decodedToken.userId) {
-          console.error("User ID is missing in the token.");
-          return;
-        }
-
-        const userId = decodedToken.userId;
-
-        // Fetch cart data for the user
-        const cartData = await ShoppingCartService.getShoppingCartByUserId(userId);
-        console.log(cartData);
-        setCartItems(cartData);
-
-        // Initialize quantities based on cart data
-        const initialQuantities = {};
-        cartData.forEach((item) => {
-          initialQuantities[item.id] = item.itemQuantity;
-        });
-        setQuantities(initialQuantities);
-      } catch (error) {
-        console.error("Error loading cart data:", error);
+    const handleStorageChange = (event) => {
+      if (event.key === "cart") {
+        loadCartFromStorage();
       }
     };
 
-    loadCartData();
-  }, []);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [loadCartFromStorage]);
+
+  const updateCartInLocalStorage = (updatedCart) => {
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
 
   const increaseQuantity = (productId) => {
+    const updatedCart = cartItems.map((item) =>
+      item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
+    );
+    setCartItems(updatedCart);
     setQuantities((prev) => ({ ...prev, [productId]: prev[productId] + 1 }));
+    updateCartInLocalStorage(updatedCart);
   };
 
   const decreaseQuantity = (productId) => {
+    const updatedCart = cartItems.map((item) =>
+      item.id === productId
+        ? { ...item, quantity: Math.max(item.quantity - 1, 1) }
+        : item
+    );
+    setCartItems(updatedCart);
     setQuantities((prev) => ({
       ...prev,
-      [productId]: Math.max(prev[productId] - 1, 0),
+      [productId]: Math.max(prev[productId] - 1, 1),
     }));
+    updateCartInLocalStorage(updatedCart);
   };
 
-  const handleCountryChange = (event) => {
-    setSelectedCountry(event.target.value);
+  const removeItem = (productId) => {
+    const updatedCart = cartItems.filter((item) => item.id !== productId);
+    setCartItems(updatedCart);
+    const updatedQuantities = { ...quantities };
+    delete updatedQuantities[productId];
+    setQuantities(updatedQuantities);
+    updateCartInLocalStorage(updatedCart);
   };
 
-  const handleZipcodeChange = (event) => {
-    setZipcode(event.target.value);
-  };
+  const handleCheckout = async () => {
+    try {
+      const total = cartItems.reduce(
+        (sum, item) => sum + item.price * quantities[item.id],
+        0
+      );
 
-  const handleStateChange = (event) => {
-    setState(event.target.value);
+      const userId = UserService.getUserId();
+      const user = await UserService.getUserProfileById(userId);
+
+      const orderData = {
+        userId: userId,
+        paymentId: null,
+        shippingAddress: `${user.data.addressLine1} ${user.data.addressLine2}`,
+        status: "PENDING",
+        totalAmount: total,
+        items: cartItems.map(({ id, quantity, price, name }) => ({
+          productId: id,
+          name,
+          quantity,
+          price,
+        })),
+      };
+
+      const response = await OrderService.createOrder(userId, orderData);
+      localStorage.setItem("orderDetails", JSON.stringify(response));
+
+      localStorage.removeItem("cart");
+      setCartItems([]);
+      localStorage.setItem("cachedTotal", total);
+      alert("Order placed successfully!");
+      navigate("/checkout");
+    } catch (error) {
+      console.error("Error placing order:", error.message);
+      alert("Failed to place order. Please try again.");
+    }
   };
 
   return (
-      <form>
-        <div>
-          <div className="flex justify-between mt-20 h-[25cm]">
-            <div className="m-10 ml-44 mb-[6.5cm] h-[13cm] rounded-xl ">
-              <table className="w-[20cm] h-[10cm] border border-collapse border-gray-300 mt-0">
-                <thead>
-                <tr>
-                  <th className="p-2 border-b border-gray-400">PRODUCT</th>
-                  <th className="p-2 border-b border-gray-400">PRICE</th>
-                  <th className="p-2 border-b border-gray-400">QUANTITY</th>
-                  <th className="p-2 border-b border-gray-400">TOTAL</th>
-                </tr>
-                </thead>
-                <tbody>
-                {cartItems.map((item) => (
-                    <tr key={item.id}>
-                      <td className="p-2 text-center border-b border-gray-400">
-                        <img
-                            src={item.imageURL} // Dynamically load image from API data
-                            alt={item.itemName}
-                            className="inline-block w-12 h-12 mr-2"
-                        />
-                        <br />
-                        {item.itemName}
-                      </td>
-                      <td className="p-2 text-center border-b border-gray-400">
-                        ${item.itemPrice}
-                      </td>
-                      <td className="p-2 text-center border-b border-gray-400">
-                        <div className="flex items-center justify-center">
-                          <button
-                              onClick={(event) => {
-                                event.preventDefault();
-                                decreaseQuantity(item.id);
-                              }}
-                              className="px-2 border border-gray-400"
-                          >
-                            -
-                          </button>
-                          <span className="mx-2">{quantities[item.id]}</span>
-                          <button
-                              onClick={(event) => {
-                                event.preventDefault();
-                                increaseQuantity(item.id);
-                              }}
-                              className="px-2 border border-gray-400"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td className="p-2 text-center border-b border-gray-400">
-                        ${item.itemPrice * quantities[item.id]}
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="border border-gray-300 w-[12cm] h-[20cm] mr-[4cm] rounded-xl p-5 mt-9">
-              <h2 className="mt-5 ml-10">CART TOTALS</h2>
-              <div className="flex">
-                <h3 className="m-2 ml-10 text-lg text-gray-600">Subtotals:</h3>
-                <div className="m-2 text-lg text-gray-600 ml-14">
-                  ${cartItems.reduce((total, item) => total + item.itemPrice * quantities[item.id], 0)}
-                </div>
-              </div>
-              <hr />
-              <div className="h-[auto]">
-                <div className="flex items-start m-2 mt-6 ml-10">
-                  <h3 className="text-lg text-gray-600">Shipping:</h3>
-                  <p className="ml-2 text-lg text-gray-600">
-                    There are no shipping methods available. Please double-check
-                    your address, or contact us if you need any help.
-                  </p>
-                </div>
-                <div>
-                  <div className="flex-col items-center h-[400px] ml-10 text-[120%] p-6 pr-1">
-                    <p className="m-2 ml-10 text-lg text-gray-600">
-                      CALCULATE SHIPPING
-                    </p>
-                    <select
-                        value={selectedCountry}
-                        onChange={handleCountryChange}
-                        className="p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">-- Choose a Country --</option>
-                      {countries.map((country, index) => (
-                          <option key={index} value={country}>
-                            {country}
-                          </option>
-                      ))}
-                    </select>
-                    <input
-                        type="text"
-                        value={state}
-                        onChange={handleStateChange}
-                        placeholder="Enter State"
-                        className="w-full p-2 mt-4 text-lg text-gray-600 border border-gray-300 rounded-md"
+    <form>
+      {/* Added responsive layout with flex and grid */}
+      <div className="flex flex-col lg:flex-row gap-6 m-4">
+        <div className="w-full lg:w-2/3 rounded-xl shadow-lg">
+          <table className="w-full border border-collapse border-gray-300 rounded-lg">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 border-b border-gray-400">PRODUCT</th>
+                <th className="p-2 border-b border-gray-400">PRICE</th>
+                <th className="p-2 border-b border-gray-400">QUANTITY</th>
+                <th className="p-2 border-b border-gray-400">TOTAL</th>
+                <th className="p-2 border-b border-gray-400">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cartItems.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-50">
+                  <td className="p-2 text-center border-b border-gray-400 flex items-center space-x-4">
+                    <img
+                      src={item.imageURL}
+                      alt={item.name}
+                      className="inline-block w-16 h-16 rounded-lg"
                     />
-                    <input
-                        type="text"
-                        value={zipcode}
-                        onChange={handleZipcodeChange}
-                        placeholder="Enter Zip Code"
-                        className="w-full p-2 mt-4 border border-gray-300 rounded-md"
-                    />
-                    <button className="w-auto px-6 py-2 mt-5 text-lg font-semibold text-gray-600 transition duration-300 ease-in-out bg-gray-200 rounded-full shadow hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
-                      Update Total
-                    </button>
-                    <div className="mt-8">
-                      <button className="p-2 mt-5 w-[8cm] text-lg font-semibold text-white transition duration-300 ease-in-out bg-black shadow rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
-                        Proceed to Checkout
+                    <span className="text-lg">{item.name}</span>
+                  </td>
+                  <td className="p-2 text-center border-b border-gray-400">
+                    ${item.price.toFixed(2)}
+                  </td>
+                  <td className="p-2 text-center border-b border-gray-400">
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          decreaseQuantity(item.id);
+                        }}
+                        className="px-2 border border-gray-400 rounded-l"
+                      >
+                        -
+                      </button>
+                      <span className="mx-2">{quantities[item.id]}</span>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          increaseQuantity(item.id);
+                        }}
+                        className="px-2 border border-gray-400 rounded-r"
+                      >
+                        +
                       </button>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  </td>
+                  <td className="p-2 text-center border-b border-gray-400">
+                    ${(item.price * quantities[item.id]).toFixed(2)}
+                  </td>
+                  <td className="p-2 text-center border-b border-gray-400">
+                    <button
+                      onClick={(event) => {
+                        event.preventDefault();
+                        removeItem(item.id);
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="w-full lg:w-1/3 border border-gray-300 rounded-xl p-5 shadow-lg">
+          <h2 className="mt-2 mb-4 text-center text-2xl font-semibold">CART TOTALS</h2>
+          <div className="flex justify-between mb-4">
+            <h3 className="text-lg text-gray-600">Subtotals:</h3>
+            <div className="text-lg text-gray-600">
+              ${cartItems.reduce((total, item) => total + item.price * quantities[item.id], 0).toFixed(2)}
             </div>
           </div>
+          <hr />
+          <div className="mt-4">
+            <h3 className="text-lg text-gray-600 mb-2">Shipping:</h3>
+            <p className="text-gray-600 text-sm">
+              There are no shipping methods available. Please double-check your address or contact us if you need help.
+            </p>
+          </div>
+          <div className="mt-6">
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                handleCheckout();
+              }}
+              className="w-full py-2 text-white bg-purple-500 rounded-lg hover:bg-purple-700 transition"
+            >
+              Proceed to Checkout
+            </button>
+          </div>
         </div>
-      </form>
+      </div>
+    </form>
   );
 };
 

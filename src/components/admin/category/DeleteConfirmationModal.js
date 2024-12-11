@@ -12,7 +12,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, categoryName }) =
                 <p>This will delete all items corresponding to category "<strong>{categoryName}</strong>".</p>
                 <p>Do you want to proceed?</p>
                 <div className="button-group">
-                    <button type="button" onClick={onClose} className="modal-button">Back</button>
+                    <button type="button" onClick={onClose} className="modal-button">Cancel</button>
                     <button type="button" onClick={onConfirm} className="modal-button">Proceed</button>
                 </div>
             </div>

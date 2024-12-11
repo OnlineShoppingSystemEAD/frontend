@@ -24,100 +24,109 @@ import ResetPassword from "./pages/login/ResetPassword";
 import ForgotPassword from "./pages/login/ForgotPassword";
 
 function App() {
-    const isLoggedIn = userService.isTokenValid(); // Check if the user is logged in
+  const isLoggedIn = userService.isTokenValid(); // Check if the user is logged in
+  const userRole = userService.getUserRole(); // Fetch user role (ADMIN or USER)
 
-    return (
-        <Router>
-            <Routes>
-                {/* Redirect root "/" to Home page */}
-                <Route
-                    path="/"
-                    element={
-                        <Home />
-                    }
-                />
+  return (
+    <Router>
+      <Routes>
+        {/* Redirect root "/" to Home page */}
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? userRole === "ADMIN" ? <Orders /> : <Home /> : <Home />
+          }
+        />
 
-                {/* Public Routes */}
-                <Route
-                    path="/login"
-                    element={isLoggedIn ? <Navigate to="/" /> : <Login />}
-                />
-                <Route
-                    path="/signup"
-                    element={isLoggedIn ? <Navigate to="/" /> : <SignUp />}
-                />
-                <Route path="/emailVerification" element={<EmailVerification />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Public Routes */}
+        <Route
+          path="/login"
+          element={isLoggedIn ? <Navigate to="/" /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={isLoggedIn ? <Navigate to="/" /> : <SignUp />}
+        />
+        <Route
+          path="/emailVerification"
+          element={isLoggedIn ? <Navigate to="/" /> : <EmailVerification />}
+        />
+        <Route
+          path="/forgot-password"
+          element={isLoggedIn ? <Navigate to="/" /> : <ForgotPassword />}
+        />
+        <Route
+          path="/reset-password"
+          element={isLoggedIn ? <Navigate to="/" /> : <ResetPassword />}
+        />
+        {/* Protected User Routes */}
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute allowedRoles={["USER"]}>
+              <Account />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <PrivateRoute allowedRoles={["USER"]}>
+              <Cart />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <PrivateRoute allowedRoles={["USER"]}>
+              <Checkout />
+            </PrivateRoute>
+          }
+        />
 
-                {/* Protected User Routes */}
-                <Route
-                    path="/account"
-                    element={
-                        <PrivateRoute allowedRoles={["USER"]}>
-                            <Account />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/cart"
-                    element={
-                        <PrivateRoute allowedRoles={["USER"]}>
-                            <Cart />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/checkout"
-                    element={
-                        <PrivateRoute allowedRoles={["USER"]}>
-                            <Checkout />
-                        </PrivateRoute>
-                    }
-                />
+        {/* Protected Admin Routes */}
+        <Route
+          path="/orders"
+          element={
+            <PrivateRoute allowedRoles={["ADMIN"]}>
+              <Orders />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/categories"
+          element={
+            <PrivateRoute allowedRoles={["ADMIN"]}>
+              <Categories />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/order/:orderId"
+          element={
+            <PrivateRoute allowedRoles={["ADMIN"]}>
+              <Order />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/category/:categoryId"
+          element={
+            <PrivateRoute allowedRoles={["ADMIN"]}>
+              <Category />
+            </PrivateRoute>
+          }
+        />
 
-                {/* Protected Admin Routes */}
-                <Route
-                    path="/orders"
-                    element={
-                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                            <Orders />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/categories"
-                    element={
-                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                            <Categories />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/order/:id"
-                    element={
-                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                            <Order />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/category/:id"
-                    element={
-                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                            <Category />
-                        </PrivateRoute>
-                    }
-                />
-
-                {/* Other Public Routes */}
-                <Route path="/about" element={<About />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="*" element={<NotFound />} /> {/* Catch-all route */}
-            </Routes>
-        </Router>
-    );
+        {/* Other Public Routes */}
+                <Route path="/about" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <About />}  />
+                <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />
+                <Route path="/contact" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Contact />}  />
+        <Route path="*" element={<NotFound />} /> {/* Catch-all route */}
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

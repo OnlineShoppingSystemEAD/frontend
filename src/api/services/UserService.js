@@ -160,6 +160,7 @@ const userService = {
 
             // Decode the token to extract the role
             const decodedToken = jwtDecode(token);
+            console.log("Role " + decodedToken.role)
             return decodedToken.role || null; // Return the role or null if not present
         } catch (error) {
             console.error("Error decoding token:", error.message);
@@ -245,22 +246,27 @@ const userService = {
      * @param formData
      * @returns {Promise<Object>} - Response data.
      */
-    updateUserProfile: async (id, formData) => {
+    updateUserProfile: async (id, userId, role, formData) => {
         try {
             const token = localStorage.getItem('token'); // Retrieve token from localStorage
             if (!token) {
                 throw new Error('User is not authenticated. Token is missing.');
             }
 
-            // Prepare headers without specifying Content-Type
+            // Prepare headers
             const headers = {
                 Authorization: `Bearer ${token}`, // Include token in the Authorization header
             };
 
             // Send FormData via Axios
-            const response = await axios.put(`${API_BASE_URL}/users/${id}/profile`, formData, {
-                headers, // Axios will set the appropriate Content-Type
-            });
+            const response = await axios.put(
+                `${API_BASE_URL}/users/${id}/profile`,
+                formData, // FormData containing userProfileDetails and profilePicture
+                {
+                    params: { userId, role }, // Add query parameters
+                    headers, // Include headers
+                }
+            );
 
             return response.data;
         } catch (error) {
@@ -280,6 +286,7 @@ const userService = {
             throw error;
         }
     },
+
 
     /**
      * Delete a user profile by ID.

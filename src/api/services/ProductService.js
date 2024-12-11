@@ -30,21 +30,22 @@ const ItemService = {
             throw error;
         }
     },
-
-    // Get items by category with pagination
-    getItemsByCategory: async (categoryId, pageNo, pageSize) => {
+    getProductsByCategory: async (categoryId, pageNo = 0, pageSize = 16) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/items/category/${categoryId}`, {
+            const response = await axios.get(`${API_BASE_URL}/api/items/category/${categoryId}`, {
+                params: {
+                    pageNo,
+                    pageSize,
+                },
                 headers: getDefaultHeaders(),
-                params: { pageNo, pageSize }, // Pass pagination params
             });
-            return response.data;
+            // The backend returns a ResponseDTO object; extract the items field
+            return response.data?.data || []; // Adjust based on ResponseDTO structure
         } catch (error) {
-            console.error("Error fetching items by category:", error.response?.data || error.message);
+            console.error("Error fetching products by category:", error.response?.data || error.message);
             throw error;
         }
     },
-
     // Create a new item (Admin Only)
     createItem: async (itemData) => {
         try {
@@ -69,6 +70,17 @@ const ItemService = {
             throw error;
         }
     },
+        deleteCategory: async (id) => {
+            try {
+                const response = await axios.delete(`${API_BASE_URL}/api/category/${id}`, {
+                    headers: getDefaultHeaders(),
+                });
+                return response.data;
+            } catch (error) {
+                console.error("Error deleting category:", error.response?.data || error.message);
+                throw error;
+            }
+        },
     // Update an existing item (Admin Only)
     updateItem: async (id, itemData) => {
         try {

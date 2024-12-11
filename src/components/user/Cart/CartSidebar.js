@@ -1,34 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { OrderService } from "../../../api/services/OrderService";
+import userService from "../../../api/services/UserService";
+import UserService from "../../../api/services/UserService";
 
-const CartSidebar = ({ isOpen, onClose }) => {
+const CartSidebar =  ({isOpen, onClose}) => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
-
   const navigate = useNavigate();
 
-  // Function to load cart data from localStorage
-  const loadCartFromStorage = () => {
+  // Calculate the total price
+  const calculateTotal = useCallback((cart) => {
+    return cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  }, []);
+
+  // Load cart data from localStorage
+  const loadCartFromStorage = useCallback(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       const cart = JSON.parse(savedCart);
       setCartItems(cart);
-
-      // Calculate total price
-      const totalPrice = cart.reduce(
-          (sum, item) => sum + item.quantity * item.price,
-          0
-      );
-      setTotal(totalPrice);
+      setTotal(calculateTotal(cart));
     } else {
       setCartItems([]);
       setTotal(0);
     }
-  };
+  }, [calculateTotal]);
 
-  // Effect to load cart data on component mount and listen for updates
   useEffect(() => {
+    // Load cart data on component mount
     loadCartFromStorage();
 
     // Storage event listener for cross-tab updates
@@ -40,65 +40,89 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Polling mechanism to detect changes within the same tab
-    const interval = setInterval(() => {
-      const savedCart = localStorage.getItem("cart");
-      if (savedCart) {
-        const cart = JSON.parse(savedCart);
-        if (JSON.stringify(cart) !== JSON.stringify(cartItems)) {
-          setCartItems(cart);
-          const totalPrice = cart.reduce(
-              (sum, item) => sum + item.quantity * item.price,
-              0
-          );
-          setTotal(totalPrice);
-        }
-      } else if (cartItems.length > 0) {
-        setCartItems([]);
-        setTotal(0);
-      }
-    }, 500); // Poll every 500ms
-
-    // Cleanup on component unmount
+    // Cleanup listener on unmount
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
     };
-  }, [cartItems]);
+  }, [loadCartFromStorage]);
+
+  // Update cart automatically when localStorage changes in the same tab
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const savedCart = localStorage.getItem("cart");
+      const cart = savedCart ? JSON.parse(savedCart) : [];
+      const newTotal = calculateTotal(cart);
+
+      if (JSON.stringify(cart) !== JSON.stringify(cartItems) || total !== newTotal) {
+        setCartItems(cart);
+        setTotal(newTotal);
+      }
+    }, 500); // Check for updates every 500ms
+
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, [cartItems, total, calculateTotal]);
 
   // Handle Checkout
   const handleCheckout = async () => {
     try {
-      // Cache the total value in localStorage
-      localStorage.setItem("cachedTotal", total);
+      // Save the total amount to localStorage
+      localStorage.setItem("cachedTotal", JSON.stringify(total)); // Ensure total is saved as a string
 
-      // Prepare order data
+      // Get the user ID and profile
+      const userId = UserService.getUserId();
+      if (!userId) {
+        throw new Error("User ID is not available. Please log in.");
+      }
+
+      const userResponse = await UserService.getUserProfileById(userId);
+      if (!userResponse || !userResponse.data) {
+        throw new Error("Failed to retrieve user profile. Please try again.");
+      }
+
+      const user = userResponse.data;
+
+      // Construct the order data
       const orderData = {
+        userId: userId,
+        paymentId: null,
+        shippingAddress: `${user.addressLine1 || ""} ${user.addressLine2 || ""}`,
+        status: "PENDING",
+        totalAmount: total,
         items: cartItems.map(({ id, quantity, price, name }) => ({
           productId: id,
           name,
           quantity,
           price,
         })),
-        totalPrice: total,
       };
-      // Send order data to OrderService
-      const  response = await OrderService.createOrder(orderData);
-      localStorage.setItem("orderDetails", response.data);
 
-      // Clear the cart after successful order
+      // Create the order
+      const response = await OrderService.createOrder(userId, orderData);
+      console.log("Order response:", response);
+
+      // Save the order response to localStorage
+      localStorage.setItem("orderDetails", JSON.stringify(response));
+
+      // Verify the saved data
+      const savedOrderDetails = JSON.parse(localStorage.getItem("orderDetails"));
+      const savedTotal = JSON.parse(localStorage.getItem("cachedTotal"));
+      console.log("Saved Order Details:", savedOrderDetails);
+      console.log("Saved Total Details:", savedTotal);
+
+      // Clear the cart after successful order creation
       localStorage.removeItem("cart");
       setCartItems([]);
       setTotal(0);
-      alert("Order placed successfully!");
 
-      // Navigate to checkout page
+      alert("Order placed successfully!");
       navigate("/checkout");
     } catch (error) {
-      console.error("Error placing order:", error.message);
-      alert("Failed to place order. Please try again.");
+      console.error("Error placing order:", error.message || error);
+      alert(error.message || "Failed to place order. Please try again.");
     }
   };
+
+
 
   return (
       <div

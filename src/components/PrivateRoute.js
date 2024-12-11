@@ -3,11 +3,11 @@ import { Navigate } from "react-router-dom";
 import userService from "../api/services/UserService";
 
 const PrivateRoute = ({
-    children,
-    allowedRoles,
-    disallowedRoles,
-    redirectIfAuthenticated = false,
-}) => {
+                          children,
+                          allowedRoles,
+                          disallowedRoles,
+                          redirectIfAuthenticated = false,
+                      }) => {
     const [isVerified, setIsVerified] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState(null);
@@ -58,6 +58,12 @@ const PrivateRoute = ({
     if (allowedRoles && !allowedRoles.includes(userRole)) {
         return <Navigate to="/" replace />;
     }
+
+    // Special condition: Restrict admins from accessing Home
+    if (userRole === "ADMIN" && window.location.pathname === "/home") {
+        return <Navigate to="/orders" replace />;
+    }
+
 
     // Allow access to the route
     return children;
