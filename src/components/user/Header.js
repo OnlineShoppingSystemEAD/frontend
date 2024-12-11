@@ -152,9 +152,6 @@ const Header = () => {
                 icon={faShoppingCart}
                 className="text-gray-700 cursor-pointer hover:text-purple-500"
               />
-              <span className="absolute w-4 h-4 text-xs text-center text-white bg-purple-500 rounded-full -top-1 -right-1">
-                3
-              </span>
             </span>
           )}
 
