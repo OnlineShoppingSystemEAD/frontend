@@ -19,8 +19,16 @@ const Login = () => {
 
     try {
       const response = await userService.signIn({ email, password });
-      localStorage.setItem("token", response.token);
-      navigate("/");
+      
+      // Get user role immediately after login
+      const userRole = userService.getUserRole();
+
+      // Navigate based on user role
+      if (userRole === "ADMIN") {
+        navigate("/orders");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
     }
@@ -71,14 +79,12 @@ const Login = () => {
           </button>
         </div>
         <div className="mt-4 text-center">
-  <a
-    href="/forgot-password"
-    className="text-purple-600 hover:text-black no-underline transition-all duration-300"
-  >
-    Forgot Password?
-  </a>
-</div>
-
+          
+          <a  href="/forgot-password"
+            className="text-purple-600 hover:text-black no-underline transition-all duration-300" >
+            Forgot Password?
+          </a>
+        </div>
       </form>
     </div>
   );

@@ -24,20 +24,34 @@ import ResetPassword from "./pages/login/ResetPassword";
 import ForgotPassword from "./pages/login/ForgotPassword";
 
 function App() {
-  const isLoggedIn = userService.isTokenValid(); // Check if the user is logged in
-  const userRole = userService.getUserRole(); // Fetch user role (ADMIN or USER)
+  const isLoggedIn = userService.isTokenValid();
+  const userRole = userService.getUserRole();
 
   return (
     <Router>
       <Routes>
-        {/* Redirect root "/" to Home page */}
+        {/* Root Route with Role-Based Redirection */}
         <Route
           path="/"
           element={
-            isLoggedIn ? userRole === "ADMIN" ? <Orders /> : <Home /> : <Home />
+            isLoggedIn 
+              ? userRole === "ADMIN" 
+                ? <Navigate to="/orders" replace /> 
+                : <Home /> 
+              : <Home />
           }
         />
-
+        {/* Login Route */}
+        <Route
+          path="/login"
+          element={
+            isLoggedIn 
+              ? (userRole === "ADMIN" 
+                  ? <Navigate to="/orders" replace /> 
+                  : <Navigate to="/" replace />)
+              : <Login />
+          }
+        />
         {/* Public Routes */}
         <Route
           path="/login"
@@ -59,6 +73,7 @@ function App() {
           path="/reset-password"
           element={isLoggedIn ? <Navigate to="/" /> : <ResetPassword />}
         />
+
         {/* Protected User Routes */}
         <Route
           path="/account"
@@ -120,9 +135,9 @@ function App() {
         />
 
         {/* Other Public Routes */}
-                <Route path="/about" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <About />}  />
-                <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />
-                <Route path="/contact" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Contact />}  />
+        <Route path="/about" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <About />}  />
+        <Route path="/shop" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Shop />}  />
+        <Route path="/contact" element={userRole === 'ADMIN' ? <Navigate to="/" /> : <Contact />}  />
         <Route path="*" element={<NotFound />} /> {/* Catch-all route */}
       </Routes>
     </Router>

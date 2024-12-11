@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import userService from "../api/services/UserService";
 
 const PrivateRoute = ({
-                          children,
-                          allowedRoles,
-                          disallowedRoles,
-                          redirectIfAuthenticated = false,
-                      }) => {
+    children,
+    allowedRoles,
+    disallowedRoles,
+    redirectIfAuthenticated = false,
+}) => {
     const [isVerified, setIsVerified] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState(null);
+    const location = useLocation();
 
     useEffect(() => {
         const verifyToken = async () => {
             try {
-                // Verify the token using the userService
                 const response = await userService.verifyToken();
-                setUserRole(response.role); // Extract role from verification response
-                setIsVerified(true); // Token is valid
+                setUserRole(response.role);
+                setIsVerified(true);
             } catch (error) {
                 console.error("Token verification failed:", error);
-                setIsVerified(false); // Token is invalid or expired
+                setIsVerified(false);
             } finally {
-                setIsLoading(false); // Stop loading once verification is complete
+                setIsLoading(false);
             }
         };
 
@@ -58,12 +58,6 @@ const PrivateRoute = ({
     if (allowedRoles && !allowedRoles.includes(userRole)) {
         return <Navigate to="/" replace />;
     }
-
-    // Special condition: Restrict admins from accessing Home
-    if (userRole === "ADMIN" && window.location.pathname === "/home") {
-        return <Navigate to="/orders" replace />;
-    }
-
 
     // Allow access to the route
     return children;
